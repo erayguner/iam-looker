@@ -1,6 +1,7 @@
 # iam-looker
 
 [![CI](https://github.com/erayguner/iam-looker/actions/workflows/ci.yml/badge.svg)](https://github.com/erayguner/iam-looker/actions/workflows/ci.yml)
+[![MegaLinter](https://github.com/erayguner/iam-looker/workflows/MegaLinter/badge.svg?branch=main)](https://github.com/erayguner/iam-looker/actions?query=workflow%3AMegaLinter+branch%3Amain)
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
@@ -12,7 +13,8 @@
 
 ## Overview
 
-**iam-looker** automates the onboarding of Google Cloud projects into Looker instances, handling group provisioning, folder creation, and dashboard cloning with complete observability and security.
+**iam-looker** automates the onboarding of Google Cloud projects into Looker instances, handling group
+provisioning, folder creation, and dashboard cloning with complete observability and security.
 
 ### Key Features
 
@@ -87,7 +89,7 @@ python functions/main.py '{"projectId":"demo","groupEmail":"demo-group@company.c
 
 ## Project Structure
 
-```
+```text
 iam-looker/
 ├── src/iam_looker/          # Main package (2025 src layout)
 │   ├── __init__.py          # Package initialization
@@ -146,7 +148,7 @@ Base64-encoded in `data` for Pub/Sub; raw JSON for HTTP.
 
 ### High-Level Flow
 
-```
+```text
 ┌─────────────┐      ┌──────────────────┐      ┌──────────────┐
 │  Pub/Sub    │─────▶│ Cloud Function   │─────▶│   Looker     │
 │  / HTTP     │      │  (Gen2)          │      │   API 4.0    │
@@ -242,6 +244,7 @@ terraform apply
 ```
 
 **How it works**:
+
 1. Source code packaged as `source-{md5}.zip`
 2. MD5 changes when any Python file changes
 3. New ZIP uploaded with new filename
@@ -490,4 +493,4 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 
 ---
 
-**Built with ❤️ for the data platform engineering community**
+Built with ❤️ for the data platform engineering community

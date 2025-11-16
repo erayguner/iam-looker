@@ -292,6 +292,14 @@ yarn-error.log*
 .npm
 .yarn/
 
+# === MegaLinter ===
+megalinter-reports/
+mega-linter.log
+linters-logs/
+.megalinter/
+megalinter-badge.svg
+report/
+
 # === Miscellaneous ===
 # Backup files
 *~
