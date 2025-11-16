@@ -16,6 +16,10 @@ from iam_looker.exceptions import ProvisioningError
 from iam_looker.provisioner import LookerProvisioner
 
 
+class TestSDKError(Exception):
+    """Custom exception for simulating SDK errors in tests."""
+
+
 class MockSDK:
     """Mock Looker SDK for testing all provisioner operations."""
 
@@ -693,7 +697,7 @@ def test_connection_error_handling():
 
     # Simulate SDK error
     def failing_create(*args, **kwargs):
-        raise Exception("Connection creation failed")
+        raise TestSDKError("Connection creation failed")
 
     sdk.create_connection = failing_create
 
@@ -708,7 +712,7 @@ def test_project_creation_error_handling():
     sdk = MockSDK()
 
     def failing_create_project(*args, **kwargs):
-        raise Exception("Project creation failed")
+        raise TestSDKError("Project creation failed")
 
     sdk.create_project = failing_create_project
 

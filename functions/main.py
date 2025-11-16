@@ -355,7 +355,7 @@ def create_connection(event: dict[str, Any], context: Any = None):
         return {"status": "error", "error": str(e)}
 
 
-def test_connection(event: dict[str, Any], context: Any = None):
+def test_connection(event: dict[str, Any], context: Any):
     """Test database connection.
 
     Args:

@@ -3,7 +3,7 @@
 import base64
 import json
 import logging
-from typing import Any
+from typing import Any, cast
 
 from .exceptions import ProvisioningError, ValidationError
 from .models import ProvisionPayload, ProvisionResult
@@ -28,7 +28,7 @@ def _decode_pubsub(event: dict[str, Any]) -> dict[str, Any]:
         raw = event[PUBSUB_DATA_KEY]
         try:
             decoded = base64.b64decode(raw).decode("utf-8")
-            return json.loads(decoded)
+            return cast(dict[str, Any], json.loads(decoded))
         except Exception as e:
             raise ValidationError(f"Failed to decode pubsub data: {e}")
     return event
@@ -39,43 +39,58 @@ def handle_event(event: dict[str, Any], context: Any = None) -> dict[str, Any]:
     try:
         payload = ProvisionPayload(**payload_dict)
     except Exception as e:
-        return ProvisionResult(
-            status="validation_error",
-            projectId=payload_dict.get("projectId", ""),
-            groupEmail=payload_dict.get("groupEmail", ""),
-            error=str(e),
-        ).model_dump()
+        return cast(
+            dict[str, Any],
+            ProvisionResult(
+                status="validation_error",
+                projectId=payload_dict.get("projectId", ""),
+                groupEmail=payload_dict.get("groupEmail", ""),
+                error=str(e),
+            ).model_dump(),
+        )
     template_ids = payload.templateDashboardIds or settings.template_dashboard_ids
     if provisioner is None:
-        return ProvisionResult(
-            status="sdk_unavailable", projectId=payload.projectId, groupEmail=payload.groupEmail
-        ).model_dump()
+        return cast(
+            dict[str, Any],
+            ProvisionResult(
+                status="sdk_unavailable", projectId=payload.projectId, groupEmail=payload.groupEmail
+            ).model_dump(),
+        )
     try:
         result = provisioner.provision(
             project_id=payload.projectId,
             group_email=payload.groupEmail,
             template_dashboard_ids=template_ids,
         )
-        return ProvisionResult(status="ok", **result).model_dump()
+        return cast(dict[str, Any], ProvisionResult(status="ok", **result).model_dump())
     except ValidationError as ve:
-        return ProvisionResult(
-            status="validation_error",
-            projectId=payload.projectId,
-            groupEmail=payload.groupEmail,
-            error=str(ve),
-        ).model_dump()
+        return cast(
+            dict[str, Any],
+            ProvisionResult(
+                status="validation_error",
+                projectId=payload.projectId,
+                groupEmail=payload.groupEmail,
+                error=str(ve),
+            ).model_dump(),
+        )
     except ProvisioningError as pe:
-        return ProvisionResult(
-            status="provisioning_error",
-            projectId=payload.projectId,
-            groupEmail=payload.groupEmail,
-            error=str(pe),
-        ).model_dump()
+        return cast(
+            dict[str, Any],
+            ProvisionResult(
+                status="provisioning_error",
+                projectId=payload.projectId,
+                groupEmail=payload.groupEmail,
+                error=str(pe),
+            ).model_dump(),
+        )
     except Exception as e:
         logger.exception("Unhandled error")
-        return ProvisionResult(
-            status="unknown_error",
-            projectId=payload.projectId,
-            groupEmail=payload.groupEmail,
-            error=str(e),
-        ).model_dump()
+        return cast(
+            dict[str, Any],
+            ProvisionResult(
+                status="unknown_error",
+                projectId=payload.projectId,
+                groupEmail=payload.groupEmail,
+                error=str(e),
+            ).model_dump(),
+        )

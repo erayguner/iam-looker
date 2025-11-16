@@ -32,7 +32,7 @@ class DashboardTemplateProcessor:
             Unmatched placeholders are left as-is.
         """
 
-        def _replace(match):
+        def _replace(match: re.Match[str]) -> str:
             key = match.group(1)
             return self.tokens.get(key, match.group(0))
 

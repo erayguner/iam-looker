@@ -26,7 +26,7 @@ class LookerProvisioner:
     - Decommissioning and cleanup
     """
 
-    def __init__(self, sdk):
+    def __init__(self, sdk: Any) -> None:
         """Initialize provisioner with Looker SDK client.
 
         Args:
@@ -61,6 +61,8 @@ class LookerProvisioner:
                 "Reusing group",
                 extra={"event": "group.reuse", "groupEmail": group_email, "groupId": gid},
             )
+            if gid is None:
+                raise ProvisioningError(f"Group {group_email} found but has no ID")
             return int(gid)
 
         body = {"name": group_email}
@@ -70,6 +72,8 @@ class LookerProvisioner:
             raise ProvisioningError(f"create_group failed: {e}")
 
         gid = getattr(created, "id", None)
+        if gid is None:
+            raise ProvisioningError(f"Created group {group_email} but no ID returned")
         logger.info(
             "Created group",
             extra={"event": "group.create", "groupEmail": group_email, "groupId": gid},
@@ -156,6 +160,8 @@ class LookerProvisioner:
         try:
             user = self.sdk.create_user(body=body)
             user_id = getattr(user, "id", None)
+            if user_id is None:
+                raise ProvisioningError(f"Created user {email} but no ID returned")
 
             # Assign roles if provided
             if role_ids:
@@ -227,6 +233,8 @@ class LookerProvisioner:
 
         if existing:
             fid = getattr(existing[0], "id", None)
+            if fid is None:
+                raise ProvisioningError(f"Folder {folder_name} found but has no ID")
             logger.info("Reusing folder", extra={"event": "folder.reuse", "folderId": fid})
             return int(fid)
 
@@ -240,6 +248,8 @@ class LookerProvisioner:
             raise ProvisioningError(f"create_folder failed: {e}")
 
         fid = getattr(created, "id", None)
+        if fid is None:
+            raise ProvisioningError(f"Created folder {folder_name} but no ID returned")
         logger.info("Created folder", extra={"event": "folder.create", "folderId": fid})
         return int(fid)
 
@@ -303,6 +313,8 @@ class LookerProvisioner:
 
         if existing:
             did = getattr(existing[0], "id", None)
+            if did is None:
+                raise ProvisioningError(f"Dashboard {desired_title} found but has no ID")
             logger.info("Reusing dashboard", extra={"event": "dashboard.reuse", "dashboardId": did})
             return int(did)
 
@@ -318,6 +330,8 @@ class LookerProvisioner:
             raise ProvisioningError(f"dashboard_copy failed: {e}")
 
         did = getattr(cloned, "id", None)
+        if did is None:
+            raise ProvisioningError(f"Cloned dashboard {desired_title} but no ID returned")
         logger.info("Cloned dashboard", extra={"event": "dashboard.clone", "dashboardId": did})
         return int(did)
 
@@ -363,6 +377,8 @@ class LookerProvisioner:
         try:
             plan = self.sdk.create_scheduled_plan(body=body)
             plan_id = getattr(plan, "id", None)
+            if plan_id is None:
+                raise ProvisioningError(f"Created scheduled plan but no ID returned")
             logger.info(
                 "Created scheduled plan",
                 extra={
@@ -388,7 +404,7 @@ class LookerProvisioner:
         username: str | None = None,
         password: str | None = None,
         service_account_json: str | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> str:
         """Create database connection.
 
@@ -464,7 +480,7 @@ class LookerProvisioner:
         except Exception as e:
             raise ProvisioningError(f"test_connection failed: {e}")
 
-    def update_connection(self, connection_name: str, **updates) -> str:
+    def update_connection(self, connection_name: str, **updates: Any) -> str:
         """Update connection configuration.
 
         Args:
@@ -520,16 +536,14 @@ class LookerProvisioner:
         """
         try:
             connections = self.sdk.all_connections() or []
-            result = []
-            for conn in connections:
-                result.append(
-                    {
-                        "name": getattr(conn, "name", ""),
-                        "dialect": getattr(conn, "dialect_name", ""),
-                        "host": getattr(conn, "host", ""),
-                    }
-                )
-            return result
+            return [
+                {
+                    "name": getattr(conn, "name", ""),
+                    "dialect": getattr(conn, "dialect_name", ""),
+                    "host": getattr(conn, "host", ""),
+                }
+                for conn in connections
+            ]
         except Exception as e:
             raise ProvisioningError(f"all_connections failed: {e}")
 
@@ -681,7 +695,7 @@ class LookerProvisioner:
 
         # Add new group mapping
         new_group_entry = {"name": group_email, "id": group_id}
-        update_body = {"groups": list(groups_field) + [new_group_entry]}
+        update_body = {"groups": [*list(groups_field), new_group_entry]}
 
         try:
             self.sdk.update_saml_config(body=update_body)
@@ -718,7 +732,7 @@ class LookerProvisioner:
             ProvisioningError: If decommissioning fails
         """
         folder_name = f"Project: {project_id}"
-        results = {
+        results: dict[str, Any] = {
             "projectId": project_id,
             "archived_folder": False,
             "deleted_dashboards": 0,

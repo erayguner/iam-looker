@@ -46,6 +46,12 @@ DISABLE:
   - JAVASCRIPT
   - TYPESCRIPT
   - SQL
+  - MARKDOWN_MARKDOWN_LINK_CHECK # Unreliable link checking
+  - MARKDOWN_MARKDOWN_TABLE_FORMATTER # Conflicts with our markdown style
+  - SPELL_LYCHEE # Duplicate link checking
+  - REPOSITORY_GITLEAKS # Duplicate secrets detection (use detect-secrets in pre-commit)
+  - JSON_PRETTIER # Conflicts with jsonlint
+  - YAML_PRETTIER # Conflicts with yamllint
 
 # Python linters configuration
 PYTHON_RUFF_CONFIG_FILE: pyproject.toml

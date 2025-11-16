@@ -6,7 +6,7 @@ import sys
 from .handler import handle_event
 
 
-def main():
+def main() -> None:
     raw = sys.argv[1] if len(sys.argv) > 1 else "{}"
     try:
         event = json.loads(raw)
