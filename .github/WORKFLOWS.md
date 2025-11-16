@@ -8,6 +8,7 @@ This document describes all GitHub Actions workflows configured for the iam-look
 - [Required Secrets](#required-secrets)
 - [Workflows](#workflows)
   - [CI Workflow](#ci-workflow)
+  - [PR Comment Workflows](#pr-comment-workflows)
   - [Deploy Cloud Functions](#deploy-cloud-functions)
   - [Deploy Terraform](#deploy-terraform)
   - [Release](#release)
@@ -19,6 +20,7 @@ This document describes all GitHub Actions workflows configured for the iam-look
 
 The iam-looker project uses GitHub Actions for:
 - Continuous Integration (CI)
+- PR status comments and check summaries
 - Cloud Functions deployment to GCP
 - Terraform infrastructure deployment
 - Automated releases with changelog generation
@@ -109,6 +111,187 @@ PYPI_API_TOKEN           # PyPI token for package publishing
 - `dist-packages-{sha}` - Python distribution packages
 - `cloud-function-artifact-{sha}` - Cloud Function deployment zip
 - `coverage-report-html` - HTML coverage report
+
+### PR Comment Workflows
+
+Automated workflows that post check results and status updates as comments on pull requests.
+
+#### PR Comment - CI Results
+
+**File:** `.github/workflows/pr-comment-ci.yml`
+
+**Trigger:**
+- When CI workflow completes
+- Only for pull request events
+
+**Features:**
+- Posts comprehensive CI job results table
+- Shows status emoji for each job (✅ success, ❌ failure, ⏳ pending)
+- Displays job duration in seconds
+- Updates existing comment instead of creating duplicates
+- Links to full workflow run
+
+**Comment Format:**
+```markdown
+## 🔍 CI Results
+
+**Workflow Run:** [View Details](link)
+**Commit:** abc1234
+**Status:** ✅ Passed / ❌ Failed / ⏳ In Progress
+
+| Job | Status | Duration |
+|-----|--------|----------|
+| Lint | ✅ success | 45s |
+| Test (3.12) | ✅ success | 120s |
+| Build | ✅ success | 30s |
+```
+
+#### PR Comment - Coverage Report
+
+**File:** `.github/workflows/pr-comment-coverage.yml`
+
+**Trigger:**
+- When CI workflow completes with coverage artifacts
+- Only for pull request events
+
+**Features:**
+- Downloads coverage data from CI artifacts
+- Extracts coverage percentage
+- Posts coverage badge with color coding (red <60%, yellow <80%, green ≥80%)
+- Shows line, statement, branch, and function coverage
+- Provides tips for improving coverage if below 80%
+- Highlights untested files
+
+**Comment Format:**
+```markdown
+## 📊 Test Coverage Report
+
+![Coverage](https://img.shields.io/badge/coverage-85%25-brightgreen)
+
+**Overall Coverage:** 85%
+
+### Coverage Breakdown
+- **Lines:** 85%
+- **Statements:** 84%
+- **Branches:** 78%
+- **Functions:** 90%
+
+### 💡 Coverage Tips
+Your coverage is good! Consider adding tests for edge cases.
+```
+
+#### PR Status Summary
+
+**File:** `.github/workflows/pr-status-summary.yml`
+
+**Trigger:**
+- When PR is opened, synchronized, or reopened
+- When CI workflow completes
+
+**Features:**
+- Comprehensive PR status overview
+- Groups all checks by status (success/failure/pending)
+- Shows total check counts in table format
+- Lists failed checks with links
+- Categorizes file changes (Python, Terraform, Workflows, Tests, Docs)
+- Displays additions/deletions statistics
+- Provides quick links to Files Changed, Conversation, and Checks
+- Includes PR readiness checklist
+- Shows local testing commands
+
+**Comment Format:**
+```markdown
+## ✅ PR Status Summary
+
+**Commit:** abc1234
+**Status:** ✅ Passed
+
+### 📊 Check Results
+
+| Status | Count |
+|--------|-------|
+| ✅ Passed | 8 |
+| ❌ Failed | 0 |
+| ⏳ Pending | 0 |
+| **Total** | **8** |
+
+### 📝 Changes Overview
+
+**Lines:** +250 / -100
+
+| Category | Files Changed |
+|----------|---------------|
+| 🐍 Python | 5 |
+| 🏗️ Terraform | 2 |
+| ⚙️ Workflows | 3 |
+| **Total** | **10** |
+
+### 🔍 Quick Links
+- [📋 Files Changed](link)
+- [💬 Conversation](link)
+- [✅ Checks](link)
+
+<details>
+<summary>💡 PR Tips</summary>
+
+**Before Merging:**
+- [ ] All CI checks are passing
+- [ ] Code has been reviewed
+- [ ] Tests added for new functionality
+...
+</details>
+```
+
+#### Enhanced Terraform Plan Comments
+
+**File:** `.github/workflows/deploy-terraform.yml` (enhanced)
+
+**Features:**
+- Posts Terraform plan results on PRs affecting `terraform/**`
+- Shows resource change summary table (add/change/destroy counts)
+- Displays full plan in collapsible section
+- Links to plan artifact for download
+- Updates existing comment for same environment
+- Color-coded emojis based on changes
+
+**Comment Format:**
+```markdown
+## 📋 Terraform Plan - `development`
+
+**Environment:** development
+**Triggered by:** @username
+
+### 📊 Planned Changes
+
+| Action | Count |
+|--------|-------|
+| ➕ Add | 3 |
+| 🔄 Change | 1 |
+| ❌ Destroy | 0 |
+
+⚠️ **This plan will modify infrastructure**
+
+<details>
+<summary>📖 Show Full Plan</summary>
+
+```terraform
+Terraform will perform the following actions:
+...
+```
+
+</details>
+
+---
+**Plan Artifact:** [Download](link)
+```
+
+**Benefits:**
+- Developers get immediate feedback without leaving GitHub
+- Easy to track test coverage trends
+- Quick identification of failed checks
+- Better PR review experience
+- Reduced context switching
+- All information in one place
 
 ### Deploy Cloud Functions
 

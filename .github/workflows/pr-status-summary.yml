@@ -1,0 +1,276 @@
+name: PR Status Summary
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+
+permissions:
+  pull-requests: write
+  contents: read
+  statuses: read
+  checks: read
+
+jobs:
+  summary:
+    name: Update PR Status Summary
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' || github.event.workflow_run.event == 'pull_request'
+
+    steps:
+      - name: Get PR number
+        id: pr-number
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            echo "number=${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
+          else
+            echo "number=${{ github.event.workflow_run.pull_requests[0].number }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Get check runs
+        uses: actions/github-script@v7
+        id: check-runs
+        with:
+          script: |
+            const pr = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: ${{ steps.pr-number.outputs.number }}
+            });
+
+            const checks = await github.rest.checks.listForRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: pr.data.head.sha,
+              per_page: 100
+            });
+
+            // Group checks by status
+            const checkSummary = {
+              success: [],
+              failure: [],
+              pending: [],
+              skipped: []
+            };
+
+            checks.data.check_runs.forEach(check => {
+              const status = check.conclusion || 'pending';
+              if (status === 'success') {
+                checkSummary.success.push(check);
+              } else if (status === 'failure') {
+                checkSummary.failure.push(check);
+              } else if (status === 'skipped' || status === 'cancelled') {
+                checkSummary.skipped.push(check);
+              } else {
+                checkSummary.pending.push(check);
+              }
+            });
+
+            return {
+              summary: checkSummary,
+              total: checks.data.check_runs.length,
+              sha: pr.data.head.sha.substring(0, 7)
+            };
+
+      - name: Get PR files changed
+        uses: actions/github-script@v7
+        id: files-changed
+        with:
+          script: |
+            const files = await github.rest.pulls.listFiles({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: ${{ steps.pr-number.outputs.number }}
+            });
+
+            const categories = {
+              python: 0,
+              terraform: 0,
+              workflows: 0,
+              tests: 0,
+              docs: 0,
+              other: 0
+            };
+
+            let additions = 0;
+            let deletions = 0;
+
+            files.data.forEach(file => {
+              additions += file.additions;
+              deletions += file.deletions;
+
+              if (file.filename.endsWith('.py')) {
+                categories.python++;
+              } else if (file.filename.endsWith('.tf') || file.filename.includes('terraform')) {
+                categories.terraform++;
+              } else if (file.filename.includes('.github/workflows')) {
+                categories.workflows++;
+              } else if (file.filename.includes('test')) {
+                categories.tests++;
+              } else if (file.filename.endsWith('.md')) {
+                categories.docs++;
+              } else {
+                categories.other++;
+              }
+            });
+
+            return {
+              total: files.data.length,
+              categories,
+              additions,
+              deletions
+            };
+
+      - name: Create status summary comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const checksData = ${{ steps.check-runs.outputs.result }};
+            const filesData = ${{ steps.files-changed.outputs.result }};
+
+            const { summary, total, sha } = checksData;
+            const successCount = summary.success.length;
+            const failureCount = summary.failure.length;
+            const pendingCount = summary.pending.length;
+
+            // Overall status
+            let overallStatus = '⏳ In Progress';
+            let statusEmoji = '⏳';
+
+            if (pendingCount === 0) {
+              if (failureCount > 0) {
+                overallStatus = '❌ Failed';
+                statusEmoji = '❌';
+              } else if (successCount === total) {
+                overallStatus = '✅ Passed';
+                statusEmoji = '✅';
+              }
+            }
+
+            // Build checks table
+            let checksTable = '';
+            if (summary.failure.length > 0) {
+              checksTable += '#### ❌ Failed Checks\n\n';
+              summary.failure.forEach(check => {
+                checksTable += `- [${check.name}](${check.html_url}) - ${check.conclusion}\n`;
+              });
+              checksTable += '\n';
+            }
+
+            if (summary.pending.length > 0) {
+              checksTable += '#### ⏳ Pending Checks\n\n';
+              summary.pending.slice(0, 5).forEach(check => {
+                checksTable += `- ${check.name} - ${check.status}\n`;
+              });
+              if (summary.pending.length > 5) {
+                checksTable += `- ... and ${summary.pending.length - 5} more\n`;
+              }
+              checksTable += '\n';
+            }
+
+            if (summary.success.length > 0 && summary.failure.length === 0) {
+              checksTable += '#### ✅ All Checks Passed\n\n';
+              checksTable += `${summary.success.length} check(s) completed successfully.\n\n`;
+            }
+
+            // Files changed summary
+            const fileCategories = filesData.categories;
+            let filesSummary = '| Category | Files Changed |\n|----------|---------------|\n';
+            if (fileCategories.python > 0) filesSummary += `| 🐍 Python | ${fileCategories.python} |\n`;
+            if (fileCategories.terraform > 0) filesSummary += `| 🏗️ Terraform | ${fileCategories.terraform} |\n`;
+            if (fileCategories.workflows > 0) filesSummary += `| ⚙️ Workflows | ${fileCategories.workflows} |\n`;
+            if (fileCategories.tests > 0) filesSummary += `| 🧪 Tests | ${fileCategories.tests} |\n`;
+            if (fileCategories.docs > 0) filesSummary += `| 📚 Docs | ${fileCategories.docs} |\n`;
+            if (fileCategories.other > 0) filesSummary += `| 📄 Other | ${fileCategories.other} |\n`;
+            filesSummary += `| **Total** | **${filesData.total}** |\n`;
+
+            const commentBody = `## ${statusEmoji} PR Status Summary
+
+**Commit:** \`${sha}\`
+**Status:** ${overallStatus}
+
+### 📊 Check Results
+
+| Status | Count |
+|--------|-------|
+| ✅ Passed | ${successCount} |
+| ❌ Failed | ${failureCount} |
+| ⏳ Pending | ${pendingCount} |
+| **Total** | **${total}** |
+
+${checksTable}
+
+### 📝 Changes Overview
+
+**Lines:** +${filesData.additions} / -${filesData.deletions}
+
+${filesSummary}
+
+---
+### 🔍 Quick Links
+
+- [📋 Files Changed](https://github.com/${{ github.repository }}/pull/${{ steps.pr-number.outputs.number }}/files)
+- [💬 Conversation](https://github.com/${{ github.repository }}/pull/${{ steps.pr-number.outputs.number }})
+- [✅ Checks](https://github.com/${{ github.repository }}/pull/${{ steps.pr-number.outputs.number }}/checks)
+
+<details>
+<summary>💡 PR Tips</summary>
+
+**Before Merging:**
+- [ ] All CI checks are passing
+- [ ] Code has been reviewed
+- [ ] Tests added for new functionality
+- [ ] Documentation updated if needed
+- [ ] No merge conflicts
+- [ ] Branch is up to date with base
+
+**Local Testing:**
+\`\`\`bash
+# Run all checks locally
+make ci
+
+# Run tests with coverage
+make test-cov
+
+# Format code
+make format
+
+# Run security scans
+make security
+\`\`\`
+
+</details>
+
+<!-- pr-status-summary -->`;
+
+            // Find and update existing comment
+            const comments = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ steps.pr-number.outputs.number }},
+            });
+
+            const botComment = comments.data.find(comment =>
+              comment.user.type === 'Bot' &&
+              comment.body.includes('<!-- pr-status-summary -->')
+            );
+
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: commentBody
+              });
+              console.log('Updated status summary comment');
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: ${{ steps.pr-number.outputs.number }},
+                body: commentBody
+              });
+              console.log('Created status summary comment');
+            }

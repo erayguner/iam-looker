@@ -161,11 +161,37 @@ jobs:
           script: |
             const fs = require('fs');
             const plan = fs.readFileSync('terraform/plan_output.txt', 'utf8');
-            const truncatedPlan = plan.length > 65000 ? plan.substring(0, 65000) + '\n\n... (truncated)' : plan;
 
-            const output = `#### Terraform Plan 📖 \`${{ needs.setup.outputs.environment }}\`
+            // Extract resource changes
+            const changesMatch = plan.match(/Plan: (\d+) to add, (\d+) to change, (\d+) to destroy/);
+            const changes = changesMatch ? {
+              add: changesMatch[1],
+              change: changesMatch[2],
+              destroy: changesMatch[3]
+            } : { add: '?', change: '?', destroy: '?' };
 
-            <details><summary>Show Plan</summary>
+            const hasChanges = changes.add !== '0' || changes.change !== '0' || changes.destroy !== '0';
+            const planEmoji = hasChanges ? '📋' : '✓';
+
+            const truncatedPlan = plan.length > 65000 ? plan.substring(0, 65000) + '\n\n... (plan truncated, download artifact for full output)' : plan;
+
+            const output = `## ${planEmoji} Terraform Plan - \`${{ needs.setup.outputs.environment }}\`
+
+            **Environment:** \`${{ needs.setup.outputs.environment }}\`
+            **Triggered by:** @${{ github.actor }}
+
+            ### 📊 Planned Changes
+
+            | Action | Count |
+            |--------|-------|
+            | ➕ Add | ${changes.add} |
+            | 🔄 Change | ${changes.change} |
+            | ❌ Destroy | ${changes.destroy} |
+
+            ${hasChanges ? '⚠️ **This plan will modify infrastructure**' : '✅ No infrastructure changes'}
+
+            <details>
+            <summary>📖 Show Full Plan</summary>
 
             \`\`\`terraform
             ${truncatedPlan}
@@ -173,14 +199,40 @@ jobs:
 
             </details>
 
-            *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`, Workflow: \`${{ github.workflow }}\`*`;
+            ---
+            **Plan Artifact:** [Download](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
 
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
+            <!-- terraform-plan-comment-${{ needs.setup.outputs.environment }} -->`;
+
+            // Find existing comment
+            const comments = await github.rest.issues.listComments({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: output
+              issue_number: context.issue.number,
             });
+
+            const botComment = comments.data.find(comment =>
+              comment.user.type === 'Bot' &&
+              comment.body.includes('<!-- terraform-plan-comment-${{ needs.setup.outputs.environment }} -->')
+            );
+
+            if (botComment) {
+              // Update existing comment
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: output
+              });
+            } else {
+              // Create new comment
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: output
+              });
+            }
 
       - name: Create plan summary
         run: |
