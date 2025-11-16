@@ -378,7 +378,7 @@ class LookerProvisioner:
             plan = self.sdk.create_scheduled_plan(body=body)
             plan_id = getattr(plan, "id", None)
             if plan_id is None:
-                raise ProvisioningError(f"Created scheduled plan but no ID returned")
+                raise ProvisioningError("Created scheduled plan but no ID returned")
             logger.info(
                 "Created scheduled plan",
                 extra={

@@ -44,7 +44,7 @@ services:
     env_file:
       - .env
     ports:
-      - "8080:8080"
+      - 8080:8080
     networks:
       - iam-looker-network
     restart: unless-stopped

@@ -173,6 +173,7 @@ ignore = [
     "COM812",  # Trailing comma missing (conflicts with formatter)
     "ISC001",  # Implicit string concatenation (conflicts with formatter)
     "TRY003",  # Long exception messages (acceptable for clarity)
+    "TRY301",  # Abstract raise to inner function (overly pedantic)
     "EM101",   # Exception string literals (acceptable for simplicity)
     "EM102",   # Exception f-strings (acceptable for dynamic messages)
 ]

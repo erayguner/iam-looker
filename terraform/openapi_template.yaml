@@ -36,7 +36,7 @@ paths:
                 groupEmail:
                   type: string
                   format: email
-                  example: "analysts@example.com"
+                  example: analysts@example.com
                 groupId:
                   type: integer
                   example: 123
@@ -76,7 +76,7 @@ paths:
               properties:
                 folderName:
                   type: string
-                  example: "Analytics Team"
+                  example: Analytics Team
                 parentId:
                   type: string
                   example: "1"
@@ -121,7 +121,7 @@ paths:
                   example: 42
                 dashboardName:
                   type: string
-                  example: "Analytics Dashboard - Team A"
+                  example: Analytics Dashboard - Team A
                 folderId:
                   type: string
                   example: "123"

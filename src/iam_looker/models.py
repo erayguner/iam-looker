@@ -1,7 +1,6 @@
 """Pydantic models for validation and data structures."""
 
 import re
-from typing import Any
 
 from pydantic import BaseModel, EmailStr, Field, PositiveInt, field_validator
 

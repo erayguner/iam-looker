@@ -28,7 +28,7 @@ def _decode_pubsub(event: dict[str, Any]) -> dict[str, Any]:
         raw = event[PUBSUB_DATA_KEY]
         try:
             decoded = base64.b64decode(raw).decode("utf-8")
-            return cast(dict[str, Any], json.loads(decoded))
+            return cast("dict[str, Any]", json.loads(decoded))
         except Exception as e:
             raise ValidationError(f"Failed to decode pubsub data: {e}")
     return event
@@ -40,7 +40,7 @@ def handle_event(event: dict[str, Any], context: Any = None) -> dict[str, Any]:
         payload = ProvisionPayload(**payload_dict)
     except Exception as e:
         return cast(
-            dict[str, Any],
+            "dict[str, Any]",
             ProvisionResult(
                 status="validation_error",
                 projectId=payload_dict.get("projectId", ""),
@@ -51,7 +51,7 @@ def handle_event(event: dict[str, Any], context: Any = None) -> dict[str, Any]:
     template_ids = payload.templateDashboardIds or settings.template_dashboard_ids
     if provisioner is None:
         return cast(
-            dict[str, Any],
+            "dict[str, Any]",
             ProvisionResult(
                 status="sdk_unavailable", projectId=payload.projectId, groupEmail=payload.groupEmail
             ).model_dump(),
@@ -62,10 +62,10 @@ def handle_event(event: dict[str, Any], context: Any = None) -> dict[str, Any]:
             group_email=payload.groupEmail,
             template_dashboard_ids=template_ids,
         )
-        return cast(dict[str, Any], ProvisionResult(status="ok", **result).model_dump())
+        return cast("dict[str, Any]", ProvisionResult(status="ok", **result).model_dump())
     except ValidationError as ve:
         return cast(
-            dict[str, Any],
+            "dict[str, Any]",
             ProvisionResult(
                 status="validation_error",
                 projectId=payload.projectId,
@@ -75,7 +75,7 @@ def handle_event(event: dict[str, Any], context: Any = None) -> dict[str, Any]:
         )
     except ProvisioningError as pe:
         return cast(
-            dict[str, Any],
+            "dict[str, Any]",
             ProvisionResult(
                 status="provisioning_error",
                 projectId=payload.projectId,
@@ -86,7 +86,7 @@ def handle_event(event: dict[str, Any], context: Any = None) -> dict[str, Any]:
     except Exception as e:
         logger.exception("Unhandled error")
         return cast(
-            dict[str, Any],
+            "dict[str, Any]",
             ProvisionResult(
                 status="unknown_error",
                 projectId=payload.projectId,
