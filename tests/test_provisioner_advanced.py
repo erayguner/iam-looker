@@ -92,6 +92,7 @@ class MockSDK:
                 for key, value in body.items():
                     setattr(u, key, value)
                 return u
+        return None
 
     def delete_user(self, user_id):
         self.users = [u for u in self.users if u.id != user_id]
@@ -118,6 +119,7 @@ class MockSDK:
                 for key, value in body.items():
                     setattr(f, key, value)
                 return f
+        return None
 
     # ========================================================================
     # DASHBOARD OPERATIONS
@@ -155,6 +157,7 @@ class MockSDK:
                 for key, value in body.items():
                     setattr(d, key, value)
                 return d
+        return None
 
     def delete_dashboard(self, dashboard_id):
         self.dashboards = [d for d in self.dashboards if d.id != dashboard_id]
@@ -216,6 +219,7 @@ class MockSDK:
                 for key, value in body.items():
                     setattr(conn, key, value)
                 return conn
+        return None
 
     def delete_connection(self, connection_name):
         self.connections = [c for c in self.connections if c.name != connection_name]

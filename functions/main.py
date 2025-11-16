@@ -9,7 +9,7 @@ This module provides all Cloud Function handlers for Looker operations including
 """
 
 import json
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 from iam_looker.provisioner import LookerProvisioner
 from iam_looker.exceptions import ProvisioningError, ValidationError

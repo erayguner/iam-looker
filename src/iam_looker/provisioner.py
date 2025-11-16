@@ -637,7 +637,7 @@ class LookerProvisioner:
             ProvisioningError: If branch creation fails
         """
         try:
-            branch = self.sdk.create_git_branch(
+            self.sdk.create_git_branch(
                 project_id=project_id,
                 body={"name": branch_name}
             )
