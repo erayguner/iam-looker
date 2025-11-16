@@ -180,29 +180,84 @@ Base64-encoded in `data` for Pub/Sub; raw JSON for HTTP.
 
 ## Deployment
 
-### Terraform Deployment
+### Terraform Deployment (Recommended)
+
+Deploy the entire infrastructure with a single `terraform apply`. Includes **automatic redeployment** when Python code changes.
+
+#### Quick Start
 
 ```bash
 cd terraform
 
-# Initialize Terraform
+# 1. Initialize Terraform
 terraform init
 
-# Create terraform.tfvars
+# 2. Create terraform.tfvars
 cat > terraform.tfvars <<EOF
 project_id     = "my-analytics-prod"
 project_number = "123456789012"
+repository     = "your-org/your-repo"
 region         = "us-central1"
-source_bucket  = "cf-source-artifacts"
-vpc_network    = "projects/123456789012/global/networks/shared-vpc"
 EOF
 
-# Plan deployment
-terraform plan -var-file=terraform.tfvars
+# 3. Review what will be created
+terraform plan
 
-# Apply infrastructure
-terraform apply -var-file=terraform.tfvars
+# 4. Deploy infrastructure
+terraform apply
+
+# 5. Configure Looker credentials
+echo -n "your-client-id" | gcloud secrets versions add looker-client-id --data-file=-
+echo -n "your-client-secret" | gcloud secrets versions add looker-client-secret --data-file=-
+echo -n "https://your-instance.looker.com:19999" | gcloud secrets versions add looker-base-url --data-file=-
 ```
+
+#### What Gets Deployed
+
+- **Storage**: GCS bucket with versioning for function source code
+- **Secrets**: 3 Secret Manager secrets for Looker credentials
+- **Pub/Sub**: 7 topics for event-driven architecture
+- **Event Functions**: 7 Pub/Sub-triggered Cloud Functions
+  - provision_project, decommission_project, add_user_to_group
+  - create_user, bulk_provision_users, create_project_folder, create_connection
+- **HTTP Functions**: 3 HTTP-triggered Cloud Functions
+  - add_group_to_saml, create_folder, create_dashboard
+- **API Gateway**: Unified REST API with OpenAPI specification
+- **WIF**: Workload Identity Federation for GitHub Actions
+
+#### Auto-Redeployment
+
+Functions **automatically redeploy** when Python code changes:
+
+```bash
+# Make any Python change
+vim src/iam_looker/provisioner.py
+
+# Terraform detects the change via MD5 hash
+terraform plan
+# Shows: source object will be recreated, functions will be updated
+
+# Deploy the change
+terraform apply
+```
+
+**How it works**:
+1. Source code packaged as `source-{md5}.zip`
+2. MD5 changes when any Python file changes
+3. New ZIP uploaded with new filename
+4. Functions detect source object change and redeploy
+5. Zero downtime via `create_before_destroy`
+
+#### Testing
+
+Run comprehensive Terraform tests:
+
+```bash
+cd terraform
+terraform test  # Runs 10 test suites, 50+ assertions
+```
+
+📖 **Full Documentation**: [docs/TERRAFORM_DEPLOYMENT.md](docs/TERRAFORM_DEPLOYMENT.md)
 
 ### Manual Cloud Function Deployment
 
