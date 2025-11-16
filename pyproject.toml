@@ -35,31 +35,31 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     # Testing
-    "pytest>=8.0.0,<9",
+    "pytest>=8.3.0,<9",
     "pytest-cov>=6.0.0,<7",
-    "pytest-asyncio>=0.24.0,<1",
+    "pytest-asyncio>=0.25.0,<1",
     "pytest-mock>=3.14.0,<4",
     "pytest-xdist>=3.6.0,<4",
 
     # Code quality
-    "ruff>=0.8.0,<1",
-    "mypy>=1.13.0,<2",
-    "pre-commit>=4.0.0,<5",
+    "ruff>=0.9.2,<1",
+    "mypy>=1.14.1,<2",
+    "pre-commit>=4.0.1,<5",
 
     # Type stubs
     "types-requests>=2.32.0",
 
     # Security
-    "bandit[toml]>=1.7.0,<2",
-    "safety>=3.0.0,<4",
+    "bandit[toml]>=1.8.0,<2",
+    "safety>=3.3.0,<4",
 
     # Build tools
-    "build>=1.0.0,<2",
+    "build>=1.2.2,<2",
     "twine>=6.0.0,<7",
 ]
 
 terraform = [
-    "checkov>=3.0.0,<4",
+    "checkov>=3.2.0,<4",
 ]
 
 all = [

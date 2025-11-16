@@ -24,7 +24,7 @@ This project adheres to a code of conduct that all contributors are expected to 
 - Python 3.12 or higher
 - Git
 - Docker and Docker Compose (optional but recommended)
-- Terraform 1.10+ (for infrastructure changes)
+- Terraform 1.11.0+ (for infrastructure changes)
 
 ### Development Environment Setup
 
