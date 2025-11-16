@@ -491,6 +491,7 @@ def test_create_scheduled_plan():
 
     folder_id = p.ensure_project_folder("project-1")
     dash_id = p.clone_dashboard_if_missing(101, folder_id, "project-1")
+    assert dash_id is not None
 
     plan_id = p.create_scheduled_plan(
         dashboard_id=dash_id,
@@ -537,6 +538,7 @@ def test_decommission_project_delete_all():
     # Setup project with dashboards and schedules
     folder_id = p.ensure_project_folder("test-project")
     dash_id = p.clone_dashboard_if_missing(101, folder_id, "test-project")
+    assert dash_id is not None
     p.create_scheduled_plan(dash_id, "Daily Report", "0 9 * * *", ["team@company.com"])
 
     assert len(sdk.dashboards) == 1
