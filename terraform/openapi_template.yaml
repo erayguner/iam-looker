@@ -1,0 +1,24 @@
+openapi: 3.0.0
+info:
+  title: Looker Automation API
+  version: v1
+paths:
+  /add-group:
+    post:
+      x-google-backend:
+        address: ${add_group_uri}
+      responses:
+        '200': { description: OK }
+  /create-folder:
+    post:
+      x-google-backend:
+        address: ${create_folder_uri}
+      responses:
+        '200': { description: OK }
+  /create-dashboard:
+    post:
+      x-google-backend:
+        address: ${create_dashboard_uri}
+      responses:
+        '200': { description: OK }
+

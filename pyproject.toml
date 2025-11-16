@@ -1,0 +1,16 @@
+[project]
+name = "iam-looker"
+version = "0.1.2"
+description = "Looker user onboarding automation"
+readme = "README.md"
+requires-python = ">=3.12"
+license = {text = "Apache-2.0"}
+
+[tool.pytest.ini_options]
+python_files = ["tests/*.py"]
+
+[tool.black]
+line-length = 100
+
+[project.optional-dependencies]
+dev = ["pytest", "black", "pydantic"]
