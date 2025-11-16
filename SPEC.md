@@ -1,9 +1,9 @@
 # Specification: iam-looker
 
-Version: 0.1.1
+Version: 0.1.2
 Status: Draft
 Owner: Data Platform Engineering
-Last Updated: 2025-11-15
+Last Updated: 2025-01-15
 
 ## 1. Purpose
 Automate onboarding of a Google Cloud project into Looker by provisioning group-based access, creating project folder(s), and cloning template dashboards with project-specific substitutions.
