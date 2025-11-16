@@ -1,8 +1,13 @@
-import json, sys
+"""Command-line interface for Looker provisioning."""
+
+import json
+import sys
+
 from .handler import handle_event
 
+
 def main():
-    raw = sys.argv[1] if len(sys.argv) > 1 else '{}'
+    raw = sys.argv[1] if len(sys.argv) > 1 else "{}"
     try:
         event = json.loads(raw)
     except Exception:
@@ -11,10 +16,6 @@ def main():
     result = handle_event(event)
     print(json.dumps(result, indent=2))
 
+
 if __name__ == "__main__":
     main()
-"""iam_looker package: provisioning automation for Looker.
-Exposes high-level handler entrypoints for Cloud Functions / Cloud Run.
-"""
-from .handler import handle_event  # convenience re-export
-

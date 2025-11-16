@@ -371,6 +371,7 @@ All logs are JSON-formatted for easy ingestion:
 ### Metrics (Future)
 
 Planned metrics exporter for:
+
 - Request duration (P50, P95, P99)
 - Success/failure rates
 - Resource creation counts

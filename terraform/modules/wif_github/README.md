@@ -3,6 +3,7 @@
 Provision Workload Identity Federation (WIF) for GitHub Actions without service account keys.
 
 ## Inputs
+
 - `project_id`: GCP project ID
 - `project_number`: Numeric project number (for principalSet path)
 - `pool_id`: Workload Identity Pool ID
@@ -11,10 +12,12 @@ Provision Workload Identity Federation (WIF) for GitHub Actions without service 
 - `ci_service_account_id`: Service account ID used for impersonation
 
 ## Outputs
+
 - `service_account_email`
 - `workload_identity_provider_name`
 
 ## Usage
+
 ```hcl
 module "wif_github" {
   source = "./modules/wif_github"
@@ -28,6 +31,6 @@ module "wif_github" {
 ```
 
 ## Notes
+
 - No service account key resource is created.
 - Attribute condition restricts usage to the specified repository.
-

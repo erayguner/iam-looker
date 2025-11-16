@@ -108,32 +108,23 @@ jobs:
             const totalCount = jobs.length;
 
             // Build comment body
-            const commentBody = `## ${overallStatus} CI Results
-
-**Commit:** \`${commitSha}\` on \`${branch}\`
-**Status:** ${conclusion.toUpperCase()}
-**Results:** ${successCount}/${totalCount} jobs passed
-
-### 📊 Job Results
-
-${jobsTable}
-
-### 📝 Summary
-
-${failureCount > 0 ? `⚠️ **${failureCount} job(s) failed** - Please review the logs above.` : '✅ All checks passed successfully!'}
-
----
-<details>
-<summary>🔗 View Details</summary>
-
-- [Full Workflow Run](${runUrl})
-- Triggered by: ${context.payload.workflow_run.event}
-- Started at: ${new Date(context.payload.workflow_run.created_at).toLocaleString()}
-- Completed at: ${new Date(context.payload.workflow_run.updated_at).toLocaleString()}
-
-</details>
-
-<!-- ci-results-comment -->`;
+            let commentBody = '## ' + overallStatus + ' CI Results\n\n';
+            commentBody += '**Commit:** `' + commitSha + '` on `' + branch + '`\n';
+            commentBody += '**Status:** ' + conclusion.toUpperCase() + '\n';
+            commentBody += '**Results:** ' + successCount + '/' + totalCount + ' jobs passed\n\n';
+            commentBody += '### 📊 Job Results\n\n';
+            commentBody += jobsTable + '\n';
+            commentBody += '### 📝 Summary\n\n';
+            commentBody += failureCount > 0 ? '⚠️ **' + failureCount + ' job(s) failed** - Please review the logs above.' : '✅ All checks passed successfully!';
+            commentBody += '\n\n---\n';
+            commentBody += '<details>\n';
+            commentBody += '<summary>🔗 View Details</summary>\n\n';
+            commentBody += '- [Full Workflow Run](' + runUrl + ')\n';
+            commentBody += '- Triggered by: ' + context.payload.workflow_run.event + '\n';
+            commentBody += '- Started at: ' + new Date(context.payload.workflow_run.created_at).toLocaleString() + '\n';
+            commentBody += '- Completed at: ' + new Date(context.payload.workflow_run.updated_at).toLocaleString() + '\n\n';
+            commentBody += '</details>\n\n';
+            commentBody += '<!-- ci-results-comment -->';
 
             // Find existing comment
             const comments = await github.rest.issues.listComments({

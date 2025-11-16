@@ -1,5 +1,6 @@
+"""Application settings and configuration."""
+
 from pydantic_settings import BaseSettings
-from typing import List, Optional
 
 
 class Settings(BaseSettings):
@@ -7,15 +8,15 @@ class Settings(BaseSettings):
     LOOKERSDK_CLIENT_ID: str = ""
     LOOKERSDK_CLIENT_SECRET: str = ""
     LOOKERSDK_VERIFY_SSL: bool = True
-    DEFAULT_TEMPLATE_FOLDER_ID: Optional[int] = None
-    DEFAULT_TEMPLATE_DASHBOARD_IDS: List[int] = []
+    DEFAULT_TEMPLATE_FOLDER_ID: int | None = None
+    DEFAULT_TEMPLATE_DASHBOARD_IDS: list[int] = []
 
     class Config:
         env_file = ".env"
         case_sensitive = False
 
     @property
-    def template_dashboard_ids(self) -> List[int]:
+    def template_dashboard_ids(self) -> list[int]:
         return self.DEFAULT_TEMPLATE_DASHBOARD_IDS or []
 
 

@@ -5,9 +5,10 @@ including project creation, user/group provisioning, connection management, cont
 deployment, and decommissioning.
 """
 
-import uuid
 import logging
-from typing import List, Optional, Dict, Any
+from typing import Any
+import uuid
+
 from .exceptions import ProvisioningError, ValidationError
 
 logger = logging.getLogger("iam_looker.provisioner")
@@ -56,11 +57,10 @@ class LookerProvisioner:
 
         if existing:
             gid = getattr(existing[0], "id", None)
-            logger.info("Reusing group", extra={
-                "event": "group.reuse",
-                "groupEmail": group_email,
-                "groupId": gid
-            })
+            logger.info(
+                "Reusing group",
+                extra={"event": "group.reuse", "groupEmail": group_email, "groupId": gid},
+            )
             return int(gid)
 
         body = {"name": group_email}
@@ -70,11 +70,10 @@ class LookerProvisioner:
             raise ProvisioningError(f"create_group failed: {e}")
 
         gid = getattr(created, "id", None)
-        logger.info("Created group", extra={
-            "event": "group.create",
-            "groupEmail": group_email,
-            "groupId": gid
-        })
+        logger.info(
+            "Created group",
+            extra={"event": "group.create", "groupEmail": group_email, "groupId": gid},
+        )
         return int(gid)
 
     def add_user_to_group(self, group_id: int, user_id: int) -> bool:
@@ -96,20 +95,18 @@ class LookerProvisioner:
             existing_user_ids = [getattr(u, "id", None) for u in group_users]
 
             if user_id in existing_user_ids:
-                logger.info("User already in group", extra={
-                    "event": "group.user.exists",
-                    "groupId": group_id,
-                    "userId": user_id
-                })
+                logger.info(
+                    "User already in group",
+                    extra={"event": "group.user.exists", "groupId": group_id, "userId": user_id},
+                )
                 return False
 
             # Add user to group
             self.sdk.add_group_user(group_id=group_id, body={"user_id": user_id})
-            logger.info("Added user to group", extra={
-                "event": "group.user.add",
-                "groupId": group_id,
-                "userId": user_id
-            })
+            logger.info(
+                "Added user to group",
+                extra={"event": "group.user.add", "groupId": group_id, "userId": user_id},
+            )
             return True
         except Exception as e:
             raise ProvisioningError(f"add_group_user failed: {e}")
@@ -129,17 +126,17 @@ class LookerProvisioner:
         """
         try:
             self.sdk.delete_group_user(group_id=group_id, user_id=user_id)
-            logger.info("Removed user from group", extra={
-                "event": "group.user.remove",
-                "groupId": group_id,
-                "userId": user_id
-            })
+            logger.info(
+                "Removed user from group",
+                extra={"event": "group.user.remove", "groupId": group_id, "userId": user_id},
+            )
             return True
         except Exception as e:
             raise ProvisioningError(f"delete_group_user failed: {e}")
 
-    def create_user(self, email: str, first_name: str, last_name: str,
-                   role_ids: Optional[List[int]] = None) -> int:
+    def create_user(
+        self, email: str, first_name: str, last_name: str, role_ids: list[int] | None = None
+    ) -> int:
         """Create new Looker user.
 
         Args:
@@ -154,11 +151,7 @@ class LookerProvisioner:
         Raises:
             ProvisioningError: If user creation fails
         """
-        body = {
-            "email": email,
-            "first_name": first_name,
-            "last_name": last_name
-        }
+        body = {"email": email, "first_name": first_name, "last_name": last_name}
 
         try:
             user = self.sdk.create_user(body=body)
@@ -168,17 +161,16 @@ class LookerProvisioner:
             if role_ids:
                 self.sdk.set_user_roles(user_id=user_id, body=role_ids)
 
-            logger.info("Created user", extra={
-                "event": "user.create",
-                "userId": user_id,
-                "email": email
-            })
+            logger.info(
+                "Created user", extra={"event": "user.create", "userId": user_id, "email": email}
+            )
             return int(user_id)
         except Exception as e:
             raise ProvisioningError(f"create_user failed: {e}")
 
-    def bulk_provision_users(self, users: List[Dict[str, Any]],
-                            group_id: Optional[int] = None) -> List[int]:
+    def bulk_provision_users(
+        self, users: list[dict[str, Any]], group_id: int | None = None
+    ) -> list[int]:
         """Provision multiple users and optionally add to group.
 
         Args:
@@ -197,24 +189,24 @@ class LookerProvisioner:
                 email=user_data["email"],
                 first_name=user_data.get("first_name", ""),
                 last_name=user_data.get("last_name", ""),
-                role_ids=user_data.get("role_ids")
+                role_ids=user_data.get("role_ids"),
             )
             user_ids.append(user_id)
 
             if group_id:
                 self.add_user_to_group(group_id, user_id)
 
-        logger.info("Bulk provisioned users", extra={
-            "event": "users.bulk_provision",
-            "count": len(user_ids)
-        })
+        logger.info(
+            "Bulk provisioned users",
+            extra={"event": "users.bulk_provision", "count": len(user_ids)},
+        )
         return user_ids
 
     # ============================================================================
     # FOLDER & CONTENT MANAGEMENT
     # ============================================================================
 
-    def ensure_project_folder(self, project_id: str, parent_id: Optional[str] = None) -> int:
+    def ensure_project_folder(self, project_id: str, parent_id: str | None = None) -> int:
         """Find or create project folder with naming convention.
 
         Args:
@@ -235,10 +227,7 @@ class LookerProvisioner:
 
         if existing:
             fid = getattr(existing[0], "id", None)
-            logger.info("Reusing folder", extra={
-                "event": "folder.reuse",
-                "folderId": fid
-            })
+            logger.info("Reusing folder", extra={"event": "folder.reuse", "folderId": fid})
             return int(fid)
 
         body = {"name": folder_name}
@@ -251,10 +240,7 @@ class LookerProvisioner:
             raise ProvisioningError(f"create_folder failed: {e}")
 
         fid = getattr(created, "id", None)
-        logger.info("Created folder", extra={
-            "event": "folder.create",
-            "folderId": fid
-        })
+        logger.info("Created folder", extra={"event": "folder.create", "folderId": fid})
         return int(fid)
 
     def move_content_to_folder(self, dashboard_id: int, target_folder_id: int) -> bool:
@@ -272,20 +258,23 @@ class LookerProvisioner:
         """
         try:
             self.sdk.update_dashboard(
-                dashboard_id=dashboard_id,
-                body={"folder_id": target_folder_id}
+                dashboard_id=dashboard_id, body={"folder_id": target_folder_id}
             )
-            logger.info("Moved dashboard", extra={
-                "event": "dashboard.move",
-                "dashboardId": dashboard_id,
-                "targetFolderId": target_folder_id
-            })
+            logger.info(
+                "Moved dashboard",
+                extra={
+                    "event": "dashboard.move",
+                    "dashboardId": dashboard_id,
+                    "targetFolderId": target_folder_id,
+                },
+            )
             return True
         except Exception as e:
             raise ProvisioningError(f"move dashboard failed: {e}")
 
-    def clone_dashboard_if_missing(self, template_dashboard_id: int,
-                                  target_folder_id: int, project_id: str) -> Optional[int]:
+    def clone_dashboard_if_missing(
+        self, template_dashboard_id: int, target_folder_id: int, project_id: str
+    ) -> int | None:
         """Clone dashboard template to project folder if not exists.
 
         Args:
@@ -314,16 +303,13 @@ class LookerProvisioner:
 
         if existing:
             did = getattr(existing[0], "id", None)
-            logger.info("Reusing dashboard", extra={
-                "event": "dashboard.reuse",
-                "dashboardId": did
-            })
+            logger.info("Reusing dashboard", extra={"event": "dashboard.reuse", "dashboardId": did})
             return int(did)
 
         body = {
             "dashboard_id": template_dashboard_id,
             "name": desired_title,
-            "folder_id": target_folder_id
+            "folder_id": target_folder_id,
         }
 
         try:
@@ -332,15 +318,17 @@ class LookerProvisioner:
             raise ProvisioningError(f"dashboard_copy failed: {e}")
 
         did = getattr(cloned, "id", None)
-        logger.info("Cloned dashboard", extra={
-            "event": "dashboard.clone",
-            "dashboardId": did
-        })
+        logger.info("Cloned dashboard", extra={"event": "dashboard.clone", "dashboardId": did})
         return int(did)
 
-    def create_scheduled_plan(self, dashboard_id: int, name: str,
-                             cron_schedule: str, destination_emails: List[str],
-                             pdf_paper_size: str = "letter") -> int:
+    def create_scheduled_plan(
+        self,
+        dashboard_id: int,
+        name: str,
+        cron_schedule: str,
+        destination_emails: list[str],
+        pdf_paper_size: str = "letter",
+    ) -> int:
         """Create scheduled dashboard delivery.
 
         Args:
@@ -361,22 +349,28 @@ class LookerProvisioner:
             "dashboard_id": dashboard_id,
             "cron tab": cron_schedule,
             "enabled": True,
-            "scheduled_plan_destination": [{
-                "format": "pdf",
-                "type": "email",
-                "address": email,
-                "parameters": {"pdf_paper_size": pdf_paper_size}
-            } for email in destination_emails]
+            "scheduled_plan_destination": [
+                {
+                    "format": "pdf",
+                    "type": "email",
+                    "address": email,
+                    "parameters": {"pdf_paper_size": pdf_paper_size},
+                }
+                for email in destination_emails
+            ],
         }
 
         try:
             plan = self.sdk.create_scheduled_plan(body=body)
             plan_id = getattr(plan, "id", None)
-            logger.info("Created scheduled plan", extra={
-                "event": "scheduled_plan.create",
-                "planId": plan_id,
-                "dashboardId": dashboard_id
-            })
+            logger.info(
+                "Created scheduled plan",
+                extra={
+                    "event": "scheduled_plan.create",
+                    "planId": plan_id,
+                    "dashboardId": dashboard_id,
+                },
+            )
             return int(plan_id)
         except Exception as e:
             raise ProvisioningError(f"create_scheduled_plan failed: {e}")
@@ -385,12 +379,17 @@ class LookerProvisioner:
     # CONNECTION MANAGEMENT
     # ============================================================================
 
-    def create_connection(self, name: str, host: str, database: str,
-                         dialect_name: str = "bigquery_standard_sql",
-                         username: Optional[str] = None,
-                         password: Optional[str] = None,
-                         service_account_json: Optional[str] = None,
-                         **kwargs) -> str:
+    def create_connection(
+        self,
+        name: str,
+        host: str,
+        database: str,
+        dialect_name: str = "bigquery_standard_sql",
+        username: str | None = None,
+        password: str | None = None,
+        service_account_json: str | None = None,
+        **kwargs,
+    ) -> str:
         """Create database connection.
 
         Args:
@@ -414,7 +413,7 @@ class LookerProvisioner:
             "host": host,
             "database": database,
             "dialect_name": dialect_name,
-            **kwargs
+            **kwargs,
         }
 
         if username:
@@ -427,15 +426,15 @@ class LookerProvisioner:
         try:
             connection = self.sdk.create_connection(body=body)
             conn_name = getattr(connection, "name", None)
-            logger.info("Created connection", extra={
-                "event": "connection.create",
-                "connectionName": conn_name
-            })
+            logger.info(
+                "Created connection",
+                extra={"event": "connection.create", "connectionName": conn_name},
+            )
             return str(conn_name)
         except Exception as e:
             raise ProvisioningError(f"create_connection failed: {e}")
 
-    def test_connection(self, connection_name: str) -> Dict[str, Any]:
+    def test_connection(self, connection_name: str) -> dict[str, Any]:
         """Test database connection.
 
         Args:
@@ -452,17 +451,16 @@ class LookerProvisioner:
             status = getattr(result, "status", None)
             message = getattr(result, "message", None)
 
-            logger.info("Tested connection", extra={
-                "event": "connection.test",
-                "connectionName": connection_name,
-                "status": status
-            })
+            logger.info(
+                "Tested connection",
+                extra={
+                    "event": "connection.test",
+                    "connectionName": connection_name,
+                    "status": status,
+                },
+            )
 
-            return {
-                "status": status,
-                "message": message,
-                "success": status == "success"
-            }
+            return {"status": status, "message": message, "success": status == "success"}
         except Exception as e:
             raise ProvisioningError(f"test_connection failed: {e}")
 
@@ -481,10 +479,10 @@ class LookerProvisioner:
         """
         try:
             self.sdk.update_connection(connection_name=connection_name, body=updates)
-            logger.info("Updated connection", extra={
-                "event": "connection.update",
-                "connectionName": connection_name
-            })
+            logger.info(
+                "Updated connection",
+                extra={"event": "connection.update", "connectionName": connection_name},
+            )
             return connection_name
         except Exception as e:
             raise ProvisioningError(f"update_connection failed: {e}")
@@ -503,15 +501,15 @@ class LookerProvisioner:
         """
         try:
             self.sdk.delete_connection(connection_name=connection_name)
-            logger.info("Deleted connection", extra={
-                "event": "connection.delete",
-                "connectionName": connection_name
-            })
+            logger.info(
+                "Deleted connection",
+                extra={"event": "connection.delete", "connectionName": connection_name},
+            )
             return True
         except Exception as e:
             raise ProvisioningError(f"delete_connection failed: {e}")
 
-    def list_connections(self) -> List[Dict[str, str]]:
+    def list_connections(self) -> list[dict[str, str]]:
         """List all database connections.
 
         Returns:
@@ -524,11 +522,13 @@ class LookerProvisioner:
             connections = self.sdk.all_connections() or []
             result = []
             for conn in connections:
-                result.append({
-                    "name": getattr(conn, "name", ""),
-                    "dialect": getattr(conn, "dialect_name", ""),
-                    "host": getattr(conn, "host", "")
-                })
+                result.append(
+                    {
+                        "name": getattr(conn, "name", ""),
+                        "dialect": getattr(conn, "dialect_name", ""),
+                        "host": getattr(conn, "host", ""),
+                    }
+                )
             return result
         except Exception as e:
             raise ProvisioningError(f"all_connections failed: {e}")
@@ -537,8 +537,9 @@ class LookerProvisioner:
     # LOOKML PROJECT MANAGEMENT
     # ============================================================================
 
-    def create_project(self, name: str, git_remote_url: str,
-                      git_service_name: Optional[str] = "github") -> str:
+    def create_project(
+        self, name: str, git_remote_url: str, git_service_name: str | None = "github"
+    ) -> str:
         """Create LookML project from git repository.
 
         Args:
@@ -555,16 +556,15 @@ class LookerProvisioner:
         body = {
             "name": name,
             "git_remote_url": git_remote_url,
-            "git_service_name": git_service_name
+            "git_service_name": git_service_name,
         }
 
         try:
             project = self.sdk.create_project(body=body)
             project_id = getattr(project, "id", None)
-            logger.info("Created LookML project", extra={
-                "event": "project.create",
-                "projectId": project_id
-            })
+            logger.info(
+                "Created LookML project", extra={"event": "project.create", "projectId": project_id}
+            )
             return str(project_id)
         except Exception as e:
             raise ProvisioningError(f"create_project failed: {e}")
@@ -583,15 +583,15 @@ class LookerProvisioner:
         """
         try:
             self.sdk.deploy_to_production(project_id=project_id)
-            logger.info("Deployed project to production", extra={
-                "event": "project.deploy",
-                "projectId": project_id
-            })
+            logger.info(
+                "Deployed project to production",
+                extra={"event": "project.deploy", "projectId": project_id},
+            )
             return True
         except Exception as e:
             raise ProvisioningError(f"deploy_to_production failed: {e}")
 
-    def validate_project(self, project_id: str) -> Dict[str, Any]:
+    def validate_project(self, project_id: str) -> dict[str, Any]:
         """Validate LookML project.
 
         Args:
@@ -608,18 +608,17 @@ class LookerProvisioner:
             errors = getattr(result, "errors", []) or []
             warnings = getattr(result, "warnings", []) or []
 
-            logger.info("Validated project", extra={
-                "event": "project.validate",
-                "projectId": project_id,
-                "errorCount": len(errors),
-                "warningCount": len(warnings)
-            })
+            logger.info(
+                "Validated project",
+                extra={
+                    "event": "project.validate",
+                    "projectId": project_id,
+                    "errorCount": len(errors),
+                    "warningCount": len(warnings),
+                },
+            )
 
-            return {
-                "valid": len(errors) == 0,
-                "errors": errors,
-                "warnings": warnings
-            }
+            return {"valid": len(errors) == 0, "errors": errors, "warnings": warnings}
         except Exception as e:
             raise ProvisioningError(f"validate_project failed: {e}")
 
@@ -637,15 +636,15 @@ class LookerProvisioner:
             ProvisioningError: If branch creation fails
         """
         try:
-            self.sdk.create_git_branch(
-                project_id=project_id,
-                body={"name": branch_name}
+            self.sdk.create_git_branch(project_id=project_id, body={"name": branch_name})
+            logger.info(
+                "Created git branch",
+                extra={
+                    "event": "project.branch.create",
+                    "projectId": project_id,
+                    "branch": branch_name,
+                },
             )
-            logger.info("Created git branch", extra={
-                "event": "project.branch.create",
-                "projectId": project_id,
-                "branch": branch_name
-            })
             return branch_name
         except Exception as e:
             raise ProvisioningError(f"create_git_branch failed: {e}")
@@ -674,10 +673,10 @@ class LookerProvisioner:
         # Check if already mapped
         for g in groups_field:
             if getattr(g, "name", None) == group_email:
-                logger.info("Reusing SAML mapping", extra={
-                    "event": "saml.group.reuse",
-                    "groupEmail": group_email
-                })
+                logger.info(
+                    "Reusing SAML mapping",
+                    extra={"event": "saml.group.reuse", "groupEmail": group_email},
+                )
                 return
 
         # Add new group mapping
@@ -689,18 +688,21 @@ class LookerProvisioner:
         except Exception as e:
             raise ProvisioningError(f"update_saml_config failed: {e}")
 
-        logger.info("Added SAML group", extra={
-            "event": "saml.group.add",
-            "groupEmail": group_email
-        })
+        logger.info(
+            "Added SAML group", extra={"event": "saml.group.add", "groupEmail": group_email}
+        )
 
     # ============================================================================
     # DECOMMISSIONING & CLEANUP
     # ============================================================================
 
-    def decommission_project(self, project_id: str, archive_folder: bool = True,
-                           delete_dashboards: bool = False,
-                           delete_schedules: bool = False) -> Dict[str, Any]:
+    def decommission_project(
+        self,
+        project_id: str,
+        archive_folder: bool = True,
+        delete_dashboards: bool = False,
+        delete_schedules: bool = False,
+    ) -> dict[str, Any]:
         """Decommission Looker project resources.
 
         Args:
@@ -720,17 +722,17 @@ class LookerProvisioner:
             "projectId": project_id,
             "archived_folder": False,
             "deleted_dashboards": 0,
-            "deleted_schedules": 0
+            "deleted_schedules": 0,
         }
 
         try:
             # Find project folder
             folders = self.sdk.search_folders(name=folder_name) or []
             if not folders:
-                logger.warning("Folder not found for decommissioning", extra={
-                    "event": "decommission.folder_not_found",
-                    "projectId": project_id
-                })
+                logger.warning(
+                    "Folder not found for decommissioning",
+                    extra={"event": "decommission.folder_not_found", "projectId": project_id},
+                )
                 return results
 
             folder_id = getattr(folders[0], "id", None)
@@ -764,10 +766,9 @@ class LookerProvisioner:
                 self.sdk.update_folder(folder_id=folder_id, body={"name": archived_name})
                 results["archived_folder"] = True
 
-            logger.info("Decommissioned project", extra={
-                "event": "project.decommission",
-                **results
-            })
+            logger.info(
+                "Decommissioned project", extra={"event": "project.decommission", **results}
+            )
 
             return results
 
@@ -788,10 +789,7 @@ class LookerProvisioner:
         """
         try:
             self.sdk.delete_group(group_id=group_id)
-            logger.info("Deleted group", extra={
-                "event": "group.delete",
-                "groupId": group_id
-            })
+            logger.info("Deleted group", extra={"event": "group.delete", "groupId": group_id})
             return True
         except Exception as e:
             raise ProvisioningError(f"delete_group failed: {e}")
@@ -810,10 +808,7 @@ class LookerProvisioner:
         """
         try:
             self.sdk.update_user(user_id=user_id, body={"is_disabled": True})
-            logger.info("Disabled user", extra={
-                "event": "user.disable",
-                "userId": user_id
-            })
+            logger.info("Disabled user", extra={"event": "user.disable", "userId": user_id})
             return True
         except Exception as e:
             raise ProvisioningError(f"disable_user failed: {e}")
@@ -832,10 +827,7 @@ class LookerProvisioner:
         """
         try:
             self.sdk.delete_user(user_id=user_id)
-            logger.info("Deleted user", extra={
-                "event": "user.delete",
-                "userId": user_id
-            })
+            logger.info("Deleted user", extra={"event": "user.delete", "userId": user_id})
             return True
         except Exception as e:
             raise ProvisioningError(f"delete_user failed: {e}")
@@ -844,8 +836,9 @@ class LookerProvisioner:
     # ORCHESTRATION (MAIN PROVISION WORKFLOW)
     # ============================================================================
 
-    def provision(self, project_id: str, group_email: str,
-                 template_dashboard_ids: List[int]) -> Dict:
+    def provision(
+        self, project_id: str, group_email: str, template_dashboard_ids: list[int]
+    ) -> dict:
         """Complete project provisioning workflow.
 
         Orchestrates:
@@ -870,11 +863,14 @@ class LookerProvisioner:
             raise ValidationError("Missing project_id or group_email")
 
         correlation_id = str(uuid.uuid4())
-        logger.info("Provision start", extra={
-            "event": "provision.start",
-            "projectId": project_id,
-            "correlationId": correlation_id
-        })
+        logger.info(
+            "Provision start",
+            extra={
+                "event": "provision.start",
+                "projectId": project_id,
+                "correlationId": correlation_id,
+            },
+        )
 
         # Step 1: Ensure group exists
         group_id = self.ensure_group(group_email)
@@ -886,7 +882,7 @@ class LookerProvisioner:
         folder_id = self.ensure_project_folder(project_id)
 
         # Step 4: Clone dashboard templates
-        cloned_ids: List[int] = []
+        cloned_ids: list[int] = []
         for dash_id in template_dashboard_ids:
             cloned = self.clone_dashboard_if_missing(dash_id, folder_id, project_id)
             if cloned:
@@ -901,9 +897,6 @@ class LookerProvisioner:
             "correlationId": correlation_id,
         }
 
-        logger.info("Provision complete", extra={
-            "event": "provision.complete",
-            **result
-        })
+        logger.info("Provision complete", extra={"event": "provision.complete", **result})
 
         return result

@@ -9,9 +9,11 @@ Tests cover:
 """
 
 import types
+
 import pytest
-from iam_looker.provisioner import LookerProvisioner
+
 from iam_looker.exceptions import ProvisioningError
+from iam_looker.provisioner import LookerProvisioner
 
 
 class MockSDK:
@@ -74,7 +76,7 @@ class MockSDK:
             email=body["email"],
             first_name=body.get("first_name", ""),
             last_name=body.get("last_name", ""),
-            is_disabled=False
+            is_disabled=False,
         )
         self.users.append(u)
         return u
@@ -106,9 +108,7 @@ class MockSDK:
 
     def create_folder(self, body):
         f = types.SimpleNamespace(
-            id=len(self.folders) + 1,
-            name=body["name"],
-            parent_id=body.get("parent_id")
+            id=len(self.folders) + 1, name=body["name"], parent_id=body.get("parent_id")
         )
         self.folders.append(f)
         return f
@@ -129,10 +129,7 @@ class MockSDK:
         for d in self.dashboards:
             if d.id == dashboard_id:
                 return d
-        return types.SimpleNamespace(
-            id=dashboard_id,
-            title=f"Template {dashboard_id}"
-        )
+        return types.SimpleNamespace(id=dashboard_id, title=f"Template {dashboard_id}")
 
     def search_dashboards(self, title=None, folder_id=None):
         results = self.dashboards
@@ -144,9 +141,7 @@ class MockSDK:
 
     def dashboard_copy(self, dashboard_id, body):
         d = types.SimpleNamespace(
-            id=len(self.dashboards) + 100,
-            title=body["name"],
-            folder_id=body["folder_id"]
+            id=len(self.dashboards) + 100, title=body["name"], folder_id=body["folder_id"]
         )
         self.dashboards.append(d)
         return d
@@ -172,7 +167,7 @@ class MockSDK:
             name=body["name"],
             dashboard_id=body["dashboard_id"],
             cron_tab=body.get("cron tab", ""),
-            enabled=body.get("enabled", True)
+            enabled=body.get("enabled", True),
         )
         self.scheduled_plans.append(plan)
         return plan
@@ -181,9 +176,7 @@ class MockSDK:
         return [p for p in self.scheduled_plans if p.dashboard_id == dashboard_id]
 
     def delete_scheduled_plan(self, schedule_id):
-        self.scheduled_plans = [
-            p for p in self.scheduled_plans if p.id != schedule_id
-        ]
+        self.scheduled_plans = [p for p in self.scheduled_plans if p.id != schedule_id]
 
     # ========================================================================
     # CONNECTION OPERATIONS
@@ -196,7 +189,7 @@ class MockSDK:
             database=body["database"],
             dialect_name=body.get("dialect_name", ""),
             username=body.get("username"),
-            password=body.get("password")
+            password=body.get("password"),
         )
         self.connections.append(conn)
         return conn
@@ -204,14 +197,8 @@ class MockSDK:
     def test_connection(self, connection_name):
         for conn in self.connections:
             if conn.name == connection_name:
-                return types.SimpleNamespace(
-                    status="success",
-                    message="Connection successful"
-                )
-        return types.SimpleNamespace(
-            status="error",
-            message="Connection not found"
-        )
+                return types.SimpleNamespace(status="success", message="Connection successful")
+        return types.SimpleNamespace(status="error", message="Connection not found")
 
     def update_connection(self, connection_name, body):
         for conn in self.connections:
@@ -236,7 +223,7 @@ class MockSDK:
             id=body["name"],
             name=body["name"],
             git_remote_url=body["git_remote_url"],
-            git_service_name=body.get("git_service_name", "github")
+            git_service_name=body.get("git_service_name", "github"),
         )
         self.projects.append(proj)
         return proj
@@ -249,10 +236,7 @@ class MockSDK:
         return types.SimpleNamespace(errors=[], warnings=[])
 
     def create_git_branch(self, project_id, body):
-        branch = types.SimpleNamespace(
-            name=body["name"],
-            project_id=project_id
-        )
+        branch = types.SimpleNamespace(name=body["name"], project_id=project_id)
         self.branches.append(branch)
         return branch
 
@@ -271,6 +255,7 @@ class MockSDK:
 # ============================================================================
 # GROUP & USER MANAGEMENT TESTS
 # ============================================================================
+
 
 def test_add_user_to_group():
     """Test adding user to group."""
@@ -309,12 +294,7 @@ def test_create_user_with_roles():
     sdk = MockSDK()
     p = LookerProvisioner(sdk)
 
-    user_id = p.create_user(
-        "user@company.com",
-        "John",
-        "Doe",
-        role_ids=[1, 2, 3]
-    )
+    user_id = p.create_user("user@company.com", "John", "Doe", role_ids=[1, 2, 3])
 
     assert user_id > 0
     # Check roles were assigned
@@ -350,6 +330,7 @@ def test_bulk_provision_users():
 # CONNECTION MANAGEMENT TESTS
 # ============================================================================
 
+
 def test_create_connection():
     """Test creating database connection."""
     sdk = MockSDK()
@@ -360,7 +341,7 @@ def test_create_connection():
         host="bigquery.googleapis.com",
         database="my-project",
         dialect_name="bigquery_standard_sql",
-        service_account_json='{"type": "service_account"}'
+        service_account_json='{"type": "service_account"}',
     )
 
     assert conn_name == "bigquery_prod"
@@ -426,14 +407,14 @@ def test_list_connections():
 # LOOKML PROJECT TESTS
 # ============================================================================
 
+
 def test_create_project():
     """Test creating LookML project."""
     sdk = MockSDK()
     p = LookerProvisioner(sdk)
 
     project_id = p.create_project(
-        name="my_project",
-        git_remote_url="https://github.com/company/repo.git"
+        name="my_project", git_remote_url="https://github.com/company/repo.git"
     )
 
     assert project_id == "my_project"
@@ -479,6 +460,7 @@ def test_create_git_branch():
 # CONTENT MANAGEMENT TESTS
 # ============================================================================
 
+
 def test_move_content_to_folder():
     """Test moving dashboard to different folder."""
     sdk = MockSDK()
@@ -510,7 +492,7 @@ def test_create_scheduled_plan():
         dashboard_id=dash_id,
         name="Daily Report",
         cron_schedule="0 9 * * *",
-        destination_emails=["team@company.com"]
+        destination_emails=["team@company.com"],
     )
 
     assert plan_id > 0
@@ -522,6 +504,7 @@ def test_create_scheduled_plan():
 # DECOMMISSIONING TESTS
 # ============================================================================
 
+
 def test_decommission_project_archive_only():
     """Test decommissioning with folder archive."""
     sdk = MockSDK()
@@ -532,11 +515,7 @@ def test_decommission_project_archive_only():
     p.clone_dashboard_if_missing(101, folder_id, "test-project")
 
     # Decommission (archive only)
-    result = p.decommission_project(
-        "test-project",
-        archive_folder=True,
-        delete_dashboards=False
-    )
+    result = p.decommission_project("test-project", archive_folder=True, delete_dashboards=False)
 
     assert result["archived_folder"] is True
     assert result["deleted_dashboards"] == 0
@@ -554,22 +533,14 @@ def test_decommission_project_delete_all():
     # Setup project with dashboards and schedules
     folder_id = p.ensure_project_folder("test-project")
     dash_id = p.clone_dashboard_if_missing(101, folder_id, "test-project")
-    p.create_scheduled_plan(
-        dash_id,
-        "Daily Report",
-        "0 9 * * *",
-        ["team@company.com"]
-    )
+    p.create_scheduled_plan(dash_id, "Daily Report", "0 9 * * *", ["team@company.com"])
 
     assert len(sdk.dashboards) == 1
     assert len(sdk.scheduled_plans) == 1
 
     # Decommission with full deletion
     result = p.decommission_project(
-        "test-project",
-        archive_folder=True,
-        delete_dashboards=True,
-        delete_schedules=True
+        "test-project", archive_folder=True, delete_dashboards=True, delete_schedules=True
     )
 
     assert result["archived_folder"] is True
@@ -625,6 +596,7 @@ def test_delete_user():
 # INTEGRATION TESTS
 # ============================================================================
 
+
 def test_complete_provisioning_workflow():
     """Test full provisioning workflow with all features."""
     sdk = MockSDK()
@@ -634,7 +606,7 @@ def test_complete_provisioning_workflow():
     result = p.provision(
         project_id="analytics-project",
         group_email="analysts@company.com",
-        template_dashboard_ids=[101, 102]
+        template_dashboard_ids=[101, 102],
     )
 
     assert result["projectId"] == "analytics-project"
@@ -647,17 +619,13 @@ def test_complete_provisioning_workflow():
             {"email": "user1@company.com", "first_name": "User", "last_name": "One"},
             {"email": "user2@company.com", "first_name": "User", "last_name": "Two"},
         ],
-        group_id=result["groupId"]
+        group_id=result["groupId"],
     )
 
     assert len(user_ids) == 2
 
     # 3. Create database connection
-    conn_name = p.create_connection(
-        "prod_bigquery",
-        "bigquery.googleapis.com",
-        "analytics-project"
-    )
+    conn_name = p.create_connection("prod_bigquery", "bigquery.googleapis.com", "analytics-project")
 
     assert conn_name == "prod_bigquery"
 
@@ -666,7 +634,7 @@ def test_complete_provisioning_workflow():
         dashboard_id=result["dashboardIds"][0],
         name="Weekly Dashboard",
         cron_schedule="0 9 * * 1",
-        destination_emails=["team@company.com"]
+        destination_emails=["team@company.com"],
     )
 
     assert plan_id > 0
@@ -686,24 +654,16 @@ def test_decommissioning_workflow():
     p = LookerProvisioner(sdk)
 
     # Setup complete project
-    result = p.provision(
-        "test-project",
-        "team@company.com",
-        [101, 102]
-    )
+    result = p.provision("test-project", "team@company.com", [101, 102])
 
     group_id = result["groupId"]
     user_ids = p.bulk_provision_users(
-        [{"email": "user@company.com", "first_name": "User", "last_name": "One"}],
-        group_id=group_id
+        [{"email": "user@company.com", "first_name": "User", "last_name": "One"}], group_id=group_id
     )
 
     # Decommission everything
     decommission_result = p.decommission_project(
-        "test-project",
-        archive_folder=True,
-        delete_dashboards=True,
-        delete_schedules=False
+        "test-project", archive_folder=True, delete_dashboards=True, delete_schedules=False
     )
 
     assert decommission_result["archived_folder"] is True
@@ -725,6 +685,7 @@ def test_decommissioning_workflow():
 # ============================================================================
 # ERROR HANDLING TESTS
 # ============================================================================
+
 
 def test_connection_error_handling():
     """Test error handling for connection operations."""

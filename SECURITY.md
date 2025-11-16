@@ -118,19 +118,23 @@ Please include the following information in your report:
 This project uses multiple security tools:
 
 ### Python Code
+
 - **Bandit**: Security linter for Python code
 - **Safety**: Checks dependencies for known vulnerabilities
 - **pip-audit**: Audits Python packages for security issues
 
 ### Terraform
+
 - **Checkov**: Infrastructure as Code security scanner
 - **tflint**: Terraform linting and security checks
 
 ### Secrets
+
 - **detect-secrets**: Prevents secrets from being committed
 - **TruffleHog**: Scans for secrets in git history
 
 ### General
+
 - **CodeQL**: Semantic code analysis
 - **Dependabot**: Automated dependency updates
 
@@ -139,6 +143,7 @@ This project uses multiple security tools:
 ### 1. Looker API Credentials
 
 Looker API credentials (`LOOKERSDK_CLIENT_ID` and `LOOKERSDK_CLIENT_SECRET`) must be:
+
 - Stored in Secret Manager
 - Never committed to version control
 - Rotated regularly
@@ -147,6 +152,7 @@ Looker API credentials (`LOOKERSDK_CLIENT_ID` and `LOOKERSDK_CLIENT_SECRET`) mus
 ### 2. Workload Identity Federation
 
 When using WIF:
+
 - Verify repository claims in attribute conditions
 - Use specific branch/tag restrictions
 - Audit identity pool usage regularly
@@ -155,6 +161,7 @@ When using WIF:
 ### 3. Cloud Function Security
 
 Cloud Functions should:
+
 - Use internal-only ingress
 - Attach to VPC networks
 - Use service accounts with minimal permissions
@@ -163,6 +170,7 @@ Cloud Functions should:
 ### 4. Terraform State
 
 Terraform state files may contain sensitive data:
+
 - Use remote state with encryption
 - Enable state locking
 - Restrict state file access
@@ -180,6 +188,7 @@ This project aims to comply with:
 ## Security Updates
 
 Security updates will be:
+
 - Released as patch versions (e.g., 0.1.3)
 - Documented in CHANGELOG.md
 - Announced via GitHub Security Advisories

@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
 - Comprehensive GitHub Actions workflows for CI/CD
   - CI workflow with linting, testing, security scanning, Terraform validation
   - Deploy Cloud Functions workflow for automated deployments
@@ -38,6 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - .gitignore with modern patterns
 
 ### Changed
+
 - Updated all tool versions to latest 2025 releases
   - Terraform: 1.11.0
   - Ruff: 0.9.2
@@ -54,11 +56,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improved documentation structure and clarity
 
 ### Removed
+
 - Unnecessary AI agent instruction files (.github/*.instructions.md)
 - README_ARCHITECTURE.md (content consolidated into SPEC.md and README.md)
 - NOTICE.md (redundant with LICENSE)
 
 ### Security
+
 - Enforced Workload Identity Federation (WIF) for all CI/CD (no service account keys)
 - Added secret scanning in CI/CD workflows
 - Implemented multi-layer security scanning (Bandit, Checkov, Safety, CodeQL)
@@ -67,6 +71,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.2] - 2025-01-15
 
 ### Added
+
 - Initial implementation for Looker provisioning automation
 - Pydantic models for data validation
 - Structured logging support with JSON formatting
@@ -75,18 +80,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Terraform infrastructure with modules
 
 ### Changed
+
 - Adopted src/ layout structure (iam_looker package)
 - Migrated to Python 3.12+ as minimum version
 - Updated to use modern Python best practices
 - Centralized configuration with Pydantic settings
 
 ### Security
+
 - Implemented keyless authentication patterns
 - Added Workload Identity Federation module
 
 ## [0.1.1] - 2024-12-01
 
 ### Added
+
 - Basic provisioning functionality
 - Terraform infrastructure code
 - Legacy modules (config.py, looker_provisioner.py, dashboard_template.py)

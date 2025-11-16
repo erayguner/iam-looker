@@ -102,40 +102,32 @@ jobs:
             // Build coverage badge
             const badgeUrl = `https://img.shields.io/badge/coverage-${coverage}%25-${coverageColor}`;
 
-            const commentBody = `## ${coverageEmoji} Test Coverage Report
+            let commentBody = '## ' + coverageEmoji + ' Test Coverage Report\n\n';
+            commentBody += '**Commit:** `' + commitSha + '`\n';
+            commentBody += '**Coverage:** ![Coverage](' + badgeUrl + ')\n\n';
+            commentBody += '### 📊 Coverage Summary\n\n';
+            commentBody += '| Metric | Value |\n';
+            commentBody += '|--------|-------|\n';
+            commentBody += '| Total Coverage | **' + coverage + '%** |\n';
+            commentBody += '| Threshold | 80% |\n';
+            commentBody += '| Status | ' + (coverageNum >= 80 ? '✅ Passing' : '⚠️ Below threshold') + ' |\n\n';
 
-**Commit:** \`${commitSha}\`
-**Coverage:** ![Coverage](${badgeUrl})
+            if (coverageNum < 80) {
+              commentBody += '### ⚠️ Coverage Warning\n\n';
+              commentBody += 'Current coverage is **' + coverage + '%**, which is below the 80% threshold.\n';
+              commentBody += 'Please add tests to improve coverage before merging.\n\n';
+            }
 
-### 📊 Coverage Summary
-
-| Metric | Value |
-|--------|-------|
-| Total Coverage | **${coverage}%** |
-| Threshold | 80% |
-| Status | ${coverageNum >= 80 ? '✅ Passing' : '⚠️ Below threshold'} |
-
-${coverageNum < 80 ? `
-### ⚠️ Coverage Warning
-
-Current coverage is **${coverage}%**, which is below the 80% threshold.
-Please add tests to improve coverage before merging.
-` : ''}
-
----
-<details>
-<summary>📈 How to improve coverage</summary>
-
-1. Run \`make test-cov\` locally to see coverage report
-2. Open \`htmlcov/index.html\` to see which lines need coverage
-3. Add tests for uncovered code paths
-4. Aim for meaningful tests, not just coverage numbers
-
-</details>
-
-[View Full Report](${runUrl})
-
-<!-- coverage-comment -->`;
+            commentBody += '---\n';
+            commentBody += '<details>\n';
+            commentBody += '<summary>📈 How to improve coverage</summary>\n\n';
+            commentBody += '1. Run `make test-cov` locally to see coverage report\n';
+            commentBody += '2. Open `htmlcov/index.html` to see which lines need coverage\n';
+            commentBody += '3. Add tests for uncovered code paths\n';
+            commentBody += '4. Aim for meaningful tests, not just coverage numbers\n\n';
+            commentBody += '</details>\n\n';
+            commentBody += '[View Full Report](' + runUrl + ')\n\n';
+            commentBody += '<!-- coverage-comment -->';
 
             // Find existing comment
             const comments = await github.rest.issues.listComments({

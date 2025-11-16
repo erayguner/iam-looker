@@ -9,16 +9,17 @@ This module provides all Cloud Function handlers for Looker operations including
 """
 
 import json
-from typing import Any, Dict
+from typing import Any
 
-from iam_looker.provisioner import LookerProvisioner
 from iam_looker.exceptions import ProvisioningError, ValidationError
-from iam_looker.models import ProvisionResult, ProvisionPayload
-from iam_looker.settings import settings
 from iam_looker.handler import provisioner as shared_provisioner
+from iam_looker.models import ProvisionPayload, ProvisionResult
+from iam_looker.provisioner import LookerProvisioner
+from iam_looker.settings import settings
 
 try:
     import looker_sdk
+
     _sdk = looker_sdk.init40()
 except Exception:
     _sdk = None
@@ -30,7 +31,8 @@ provisioner = shared_provisioner or (LookerProvisioner(_sdk) if _sdk else None)
 # CORE PROVISIONING FUNCTIONS
 # ============================================================================
 
-def provision_looker_project(event: Dict[str, Any], context: Any = None):
+
+def provision_looker_project(event: dict[str, Any], context: Any = None):
     """Complete project provisioning workflow.
 
     Args:
@@ -50,7 +52,7 @@ def provision_looker_project(event: Dict[str, Any], context: Any = None):
             status="validation_error",
             projectId=event.get("projectId", ""),
             groupEmail=event.get("groupEmail", ""),
-            error=str(e)
+            error=str(e),
         ).model_dump()
 
     template_ids = payload.templateDashboardIds or settings.template_dashboard_ids
@@ -59,19 +61,16 @@ def provision_looker_project(event: Dict[str, Any], context: Any = None):
         result = provisioner.provision(
             project_id=payload.projectId,
             group_email=payload.groupEmail,
-            template_dashboard_ids=template_ids
+            template_dashboard_ids=template_ids,
         )
         return ProvisionResult(status="ok", **result).model_dump()
     except (ProvisioningError, ValidationError) as e:
         return ProvisionResult(
-            status="error",
-            projectId=payload.projectId,
-            groupEmail=payload.groupEmail,
-            error=str(e)
+            status="error", projectId=payload.projectId, groupEmail=payload.groupEmail, error=str(e)
         ).model_dump()
 
 
-def decommission_looker_project(event: Dict[str, Any], context: Any = None):
+def decommission_looker_project(event: dict[str, Any], context: Any = None):
     """Decommission Looker project resources.
 
     Args:
@@ -99,7 +98,7 @@ def decommission_looker_project(event: Dict[str, Any], context: Any = None):
             project_id=project_id,
             archive_folder=archive_folder,
             delete_dashboards=delete_dashboards,
-            delete_schedules=delete_schedules
+            delete_schedules=delete_schedules,
         )
         return {"status": "ok", **result}
     except ProvisioningError as e:
@@ -110,7 +109,8 @@ def decommission_looker_project(event: Dict[str, Any], context: Any = None):
 # GROUP & USER MANAGEMENT FUNCTIONS
 # ============================================================================
 
-def add_group_to_saml(event: Dict[str, Any], context: Any = None):
+
+def add_group_to_saml(event: dict[str, Any], context: Any = None):
     """Add group to SAML configuration.
 
     Args:
@@ -128,21 +128,15 @@ def add_group_to_saml(event: Dict[str, Any], context: Any = None):
         gid = provisioner.ensure_group(group_email)
         provisioner.ensure_saml_group_mapping(gid, group_email)
         return ProvisionResult(
-            status="ok",
-            projectId="",
-            groupEmail=group_email,
-            groupId=gid
+            status="ok", projectId="", groupEmail=group_email, groupId=gid
         ).model_dump()
     except (ProvisioningError, ValidationError) as e:
         return ProvisionResult(
-            status="error",
-            projectId="",
-            groupEmail=group_email,
-            error=str(e)
+            status="error", projectId="", groupEmail=group_email, error=str(e)
         ).model_dump()
 
 
-def add_user_to_group(event: Dict[str, Any], context: Any = None):
+def add_user_to_group(event: dict[str, Any], context: Any = None):
     """Add user to Looker group.
 
     Args:
@@ -160,17 +154,12 @@ def add_user_to_group(event: Dict[str, Any], context: Any = None):
 
     try:
         added = provisioner.add_user_to_group(int(group_id), int(user_id))
-        return {
-            "status": "ok",
-            "groupId": group_id,
-            "userId": user_id,
-            "added": added
-        }
+        return {"status": "ok", "groupId": group_id, "userId": user_id, "added": added}
     except ProvisioningError as e:
         return {"status": "error", "error": str(e)}
 
 
-def create_user(event: Dict[str, Any], context: Any = None):
+def create_user(event: dict[str, Any], context: Any = None):
     """Create Looker user.
 
     Args:
@@ -188,14 +177,14 @@ def create_user(event: Dict[str, Any], context: Any = None):
             email=event.get("email", ""),
             first_name=event.get("firstName", ""),
             last_name=event.get("lastName", ""),
-            role_ids=event.get("roleIds")
+            role_ids=event.get("roleIds"),
         )
         return {"status": "ok", "userId": user_id, "email": event.get("email")}
     except ProvisioningError as e:
         return {"status": "error", "error": str(e)}
 
 
-def bulk_provision_users(event: Dict[str, Any], context: Any = None):
+def bulk_provision_users(event: dict[str, Any], context: Any = None):
     """Provision multiple users.
 
     Args:
@@ -222,7 +211,8 @@ def bulk_provision_users(event: Dict[str, Any], context: Any = None):
 # FOLDER & CONTENT MANAGEMENT FUNCTIONS
 # ============================================================================
 
-def create_project_folder(event: Dict[str, Any], context: Any = None):
+
+def create_project_folder(event: dict[str, Any], context: Any = None):
     """Create project folder.
 
     Args:
@@ -237,16 +227,13 @@ def create_project_folder(event: Dict[str, Any], context: Any = None):
         return {"status": "sdk_unavailable", "projectId": project_id}
 
     try:
-        fid = provisioner.ensure_project_folder(
-            project_id,
-            parent_id=event.get("parentId")
-        )
+        fid = provisioner.ensure_project_folder(project_id, parent_id=event.get("parentId"))
         return {"status": "ok", "projectId": project_id, "folderId": fid}
     except ProvisioningError as e:
         return {"status": "error", "projectId": project_id, "error": str(e)}
 
 
-def create_dashboard_from_template(event: Dict[str, Any], context: Any = None):
+def create_dashboard_from_template(event: dict[str, Any], context: Any = None):
     """Clone dashboard template.
 
     Args:
@@ -262,16 +249,14 @@ def create_dashboard_from_template(event: Dict[str, Any], context: Any = None):
 
     try:
         did = provisioner.clone_dashboard_if_missing(
-            int(event.get("templateDashboardId")),
-            int(event.get("folderId")),
-            project_id
+            int(event.get("templateDashboardId")), int(event.get("folderId")), project_id
         )
         return {"status": "ok", "projectId": project_id, "dashboardId": did}
     except (ProvisioningError, Exception) as e:
         return {"status": "error", "projectId": project_id, "error": str(e)}
 
 
-def move_dashboard_to_folder(event: Dict[str, Any], context: Any = None):
+def move_dashboard_to_folder(event: dict[str, Any], context: Any = None):
     """Move dashboard to different folder.
 
     Args:
@@ -286,19 +271,18 @@ def move_dashboard_to_folder(event: Dict[str, Any], context: Any = None):
 
     try:
         provisioner.move_content_to_folder(
-            int(event.get("dashboardId")),
-            int(event.get("targetFolderId"))
+            int(event.get("dashboardId")), int(event.get("targetFolderId"))
         )
         return {
             "status": "ok",
             "dashboardId": event.get("dashboardId"),
-            "targetFolderId": event.get("targetFolderId")
+            "targetFolderId": event.get("targetFolderId"),
         }
     except ProvisioningError as e:
         return {"status": "error", "error": str(e)}
 
 
-def create_scheduled_delivery(event: Dict[str, Any], context: Any = None):
+def create_scheduled_delivery(event: dict[str, Any], context: Any = None):
     """Create scheduled dashboard delivery.
 
     Args:
@@ -323,7 +307,7 @@ def create_scheduled_delivery(event: Dict[str, Any], context: Any = None):
             name=event.get("name", ""),
             cron_schedule=event.get("cronSchedule", ""),
             destination_emails=event.get("destinationEmails", []),
-            pdf_paper_size=event.get("pdfPaperSize", "letter")
+            pdf_paper_size=event.get("pdfPaperSize", "letter"),
         )
         return {"status": "ok", "scheduledPlanId": plan_id}
     except ProvisioningError as e:
@@ -334,7 +318,8 @@ def create_scheduled_delivery(event: Dict[str, Any], context: Any = None):
 # CONNECTION MANAGEMENT FUNCTIONS
 # ============================================================================
 
-def create_connection(event: Dict[str, Any], context: Any = None):
+
+def create_connection(event: dict[str, Any], context: Any = None):
     """Create database connection.
 
     Args:
@@ -363,14 +348,14 @@ def create_connection(event: Dict[str, Any], context: Any = None):
             dialect_name=event.get("dialectName", "bigquery_standard_sql"),
             username=event.get("username"),
             password=event.get("password"),
-            service_account_json=event.get("serviceAccountJson")
+            service_account_json=event.get("serviceAccountJson"),
         )
         return {"status": "ok", "connectionName": conn_name}
     except ProvisioningError as e:
         return {"status": "error", "error": str(e)}
 
 
-def test_connection(event: Dict[str, Any], context: Any = None):
+def test_connection(event: dict[str, Any], context: Any = None):
     """Test database connection.
 
     Args:
@@ -390,7 +375,7 @@ def test_connection(event: Dict[str, Any], context: Any = None):
         return {"status": "error", "error": str(e)}
 
 
-def delete_connection(event: Dict[str, Any], context: Any = None):
+def delete_connection(event: dict[str, Any], context: Any = None):
     """Delete database connection.
 
     Args:
@@ -410,7 +395,7 @@ def delete_connection(event: Dict[str, Any], context: Any = None):
         return {"status": "error", "error": str(e)}
 
 
-def list_connections(event: Dict[str, Any], context: Any = None):
+def list_connections(event: dict[str, Any], context: Any = None):
     """List all database connections.
 
     Args:
@@ -434,7 +419,8 @@ def list_connections(event: Dict[str, Any], context: Any = None):
 # LOOKML PROJECT MANAGEMENT FUNCTIONS
 # ============================================================================
 
-def create_lookml_project(event: Dict[str, Any], context: Any = None):
+
+def create_lookml_project(event: dict[str, Any], context: Any = None):
     """Create LookML project.
 
     Args:
@@ -451,14 +437,14 @@ def create_lookml_project(event: Dict[str, Any], context: Any = None):
         project_id = provisioner.create_project(
             name=event.get("name", ""),
             git_remote_url=event.get("gitRemoteUrl", ""),
-            git_service_name=event.get("gitServiceName", "github")
+            git_service_name=event.get("gitServiceName", "github"),
         )
         return {"status": "ok", "projectId": project_id}
     except ProvisioningError as e:
         return {"status": "error", "error": str(e)}
 
 
-def deploy_project_to_production(event: Dict[str, Any], context: Any = None):
+def deploy_project_to_production(event: dict[str, Any], context: Any = None):
     """Deploy LookML project to production.
 
     Args:
@@ -478,7 +464,7 @@ def deploy_project_to_production(event: Dict[str, Any], context: Any = None):
         return {"status": "error", "error": str(e)}
 
 
-def validate_project(event: Dict[str, Any], context: Any = None):
+def validate_project(event: dict[str, Any], context: Any = None):
     """Validate LookML project.
 
     Args:
@@ -504,7 +490,8 @@ def validate_project(event: Dict[str, Any], context: Any = None):
 
 if __name__ == "__main__":
     import sys
-    raw = sys.argv[1] if len(sys.argv) > 1 else '{}'
+
+    raw = sys.argv[1] if len(sys.argv) > 1 else "{}"
     event = json.loads(raw)
     # Default to orchestration function
     print(json.dumps(provision_looker_project(event), indent=2))

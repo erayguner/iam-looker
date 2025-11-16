@@ -186,64 +186,47 @@ jobs:
             if (fileCategories.other > 0) filesSummary += `| 📄 Other | ${fileCategories.other} |\n`;
             filesSummary += `| **Total** | **${filesData.total}** |\n`;
 
-            const commentBody = `## ${statusEmoji} PR Status Summary
-
-**Commit:** \`${sha}\`
-**Status:** ${overallStatus}
-
-### 📊 Check Results
-
-| Status | Count |
-|--------|-------|
-| ✅ Passed | ${successCount} |
-| ❌ Failed | ${failureCount} |
-| ⏳ Pending | ${pendingCount} |
-| **Total** | **${total}** |
-
-${checksTable}
-
-### 📝 Changes Overview
-
-**Lines:** +${filesData.additions} / -${filesData.deletions}
-
-${filesSummary}
-
----
-### 🔍 Quick Links
-
-- [📋 Files Changed](https://github.com/${{ github.repository }}/pull/${{ steps.pr-number.outputs.number }}/files)
-- [💬 Conversation](https://github.com/${{ github.repository }}/pull/${{ steps.pr-number.outputs.number }})
-- [✅ Checks](https://github.com/${{ github.repository }}/pull/${{ steps.pr-number.outputs.number }}/checks)
-
-<details>
-<summary>💡 PR Tips</summary>
-
-**Before Merging:**
-- [ ] All CI checks are passing
-- [ ] Code has been reviewed
-- [ ] Tests added for new functionality
-- [ ] Documentation updated if needed
-- [ ] No merge conflicts
-- [ ] Branch is up to date with base
-
-**Local Testing:**
-\`\`\`bash
-# Run all checks locally
-make ci
-
-# Run tests with coverage
-make test-cov
-
-# Format code
-make format
-
-# Run security scans
-make security
-\`\`\`
-
-</details>
-
-<!-- pr-status-summary -->`;
+            let commentBody = '## ' + statusEmoji + ' PR Status Summary\n\n';
+            commentBody += '**Commit:** `' + sha + '`\n';
+            commentBody += '**Status:** ' + overallStatus + '\n\n';
+            commentBody += '### 📊 Check Results\n\n';
+            commentBody += '| Status | Count |\n';
+            commentBody += '|--------|-------|\n';
+            commentBody += '| ✅ Passed | ' + successCount + ' |\n';
+            commentBody += '| ❌ Failed | ' + failureCount + ' |\n';
+            commentBody += '| ⏳ Pending | ' + pendingCount + ' |\n';
+            commentBody += '| **Total** | **' + total + '** |\n\n';
+            commentBody += checksTable + '\n';
+            commentBody += '### 📝 Changes Overview\n\n';
+            commentBody += '**Lines:** +' + filesData.additions + ' / -' + filesData.deletions + '\n\n';
+            commentBody += filesSummary + '\n';
+            commentBody += '---\n';
+            commentBody += '### 🔍 Quick Links\n\n';
+            commentBody += '- [📋 Files Changed](https://github.com/${{ github.repository }}/pull/${{ steps.pr-number.outputs.number }}/files)\n';
+            commentBody += '- [💬 Conversation](https://github.com/${{ github.repository }}/pull/${{ steps.pr-number.outputs.number }})\n';
+            commentBody += '- [✅ Checks](https://github.com/${{ github.repository }}/pull/${{ steps.pr-number.outputs.number }}/checks)\n\n';
+            commentBody += '<details>\n';
+            commentBody += '<summary>💡 PR Tips</summary>\n\n';
+            commentBody += '**Before Merging:**\n';
+            commentBody += '- [ ] All CI checks are passing\n';
+            commentBody += '- [ ] Code has been reviewed\n';
+            commentBody += '- [ ] Tests added for new functionality\n';
+            commentBody += '- [ ] Documentation updated if needed\n';
+            commentBody += '- [ ] No merge conflicts\n';
+            commentBody += '- [ ] Branch is up to date with base\n\n';
+            commentBody += '**Local Testing:**\n';
+            commentBody += '```bash\n';
+            commentBody += '# Run all checks locally\n';
+            commentBody += 'make ci\n\n';
+            commentBody += '# Run tests with coverage\n';
+            commentBody += 'make test-cov\n\n';
+            commentBody += '# Format code\n';
+            commentBody += 'make format\n\n';
+            commentBody += '# Run security scans\n';
+            commentBody += 'make security\n';
+            commentBody += '```\n\n';
+            commentBody += '</details>\n\n';
+            commentBody += '<!-- pr-status-summary -->';
 
             // Find and update existing comment
             const comments = await github.rest.issues.listComments({

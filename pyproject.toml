@@ -172,6 +172,9 @@ ignore = [
     "FIX002",  # Line contains TODO
     "COM812",  # Trailing comma missing (conflicts with formatter)
     "ISC001",  # Implicit string concatenation (conflicts with formatter)
+    "TRY003",  # Long exception messages (acceptable for clarity)
+    "EM101",   # Exception string literals (acceptable for simplicity)
+    "EM102",   # Exception f-strings (acceptable for dynamic messages)
 ]
 
 # Allow fix for all enabled rules (when `--fix` is provided)
@@ -191,6 +194,36 @@ dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 ]
 "scripts/**/*.py" = [
     "T20",     # Print found
+    "INP001",  # Implicit namespace package (scripts don't need __init__.py)
+]
+"functions/**/*.py" = [
+    "ARG001",  # Unused function argument (context required by Cloud Functions interface)
+    "BLE001",  # Blind except (acceptable for Cloud Function error handling)
+    "TRY300",  # Consider else block (minor style preference)
+    "T201",    # Print found (acceptable for __main__ block)
+]
+"src/iam_looker/cli.py" = [
+    "T201",    # Print found (CLI tool needs to print)
+    "BLE001",  # Blind except (acceptable for CLI error handling)
+]
+"src/iam_looker/handler.py" = [
+    "BLE001",  # Blind except (acceptable for robust error handling)
+    "ARG001",  # Unused context parameter (required by Cloud Functions interface)
+    "TRY003",  # Long exception messages (acceptable for detailed error reporting)
+    "EM102",   # F-string in exception (acceptable for dynamic messages)
+    "B904",    # Exception chaining (not always needed for validation errors)
+]
+"src/iam_looker/models.py" = [
+    "N815",    # mixedCase variables (required for API compatibility with JSON payloads)
+    "N805",    # cls vs self (Pydantic validators use cls)
+]
+"src/iam_looker/provisioner.py" = [
+    "BLE001",  # Blind except (wrapping SDK calls requires catching all exceptions)
+    "B904",    # Exception chaining (ProvisioningError wraps SDK errors)
+    "TRY300",  # Else block (return in try block is acceptable pattern)
+]
+"docs/**/*" = [
+    "INP001",  # Documentation directories don't need __init__.py
 ]
 
 [tool.ruff.format]

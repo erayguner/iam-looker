@@ -1,4 +1,9 @@
+"""Custom exceptions for Looker provisioning."""
+
+
 class ProvisioningError(Exception):
-    pass
+    """Raised when Looker provisioning operations fail."""
+
+
 class ValidationError(Exception):
-    pass
+    """Raised when input validation fails."""

@@ -20,6 +20,7 @@ Complete reference for all Looker automation functions available via Cloud Funct
 Complete workflow for onboarding a GCP project into Looker.
 
 **Payload:**
+
 ```json
 {
   "projectId": "analytics-project-prod",
@@ -29,6 +30,7 @@ Complete workflow for onboarding a GCP project into Looker.
 ```
 
 **Returns:**
+
 ```json
 {
   "status": "ok",
@@ -42,6 +44,7 @@ Complete workflow for onboarding a GCP project into Looker.
 ```
 
 **What it does:**
+
 1. Creates/finds Looker group for the Google Workspace group
 2. Adds group to SAML configuration
 3. Creates project folder with naming convention `Project: {projectId}`
@@ -55,6 +58,7 @@ Complete workflow for onboarding a GCP project into Looker.
 Safely decommission Looker project resources with configurable cleanup levels.
 
 **Payload:**
+
 ```json
 {
   "projectId": "old-analytics-project",
@@ -65,11 +69,13 @@ Safely decommission Looker project resources with configurable cleanup levels.
 ```
 
 **Parameters:**
+
 - `archiveFolder` (bool, default `true`): Rename folder to "Archived: {name}"
 - `deleteDashboards` (bool, default `false`): Permanently delete all dashboards
 - `deleteSchedules` (bool, default `false`): Delete all scheduled deliveries
 
 **Returns:**
+
 ```json
 {
   "status": "ok",
@@ -89,6 +95,7 @@ Safely decommission Looker project resources with configurable cleanup levels.
 Add Google Workspace group to Looker SAML configuration.
 
 **Payload:**
+
 ```json
 {
   "groupEmail": "analysts@company.com"
@@ -96,6 +103,7 @@ Add Google Workspace group to Looker SAML configuration.
 ```
 
 **Returns:**
+
 ```json
 {
   "status": "ok",
@@ -111,6 +119,7 @@ Add Google Workspace group to Looker SAML configuration.
 Create a new Looker user with optional role assignment.
 
 **Payload:**
+
 ```json
 {
   "email": "john.doe@company.com",
@@ -121,6 +130,7 @@ Create a new Looker user with optional role assignment.
 ```
 
 **Returns:**
+
 ```json
 {
   "status": "ok",
@@ -136,6 +146,7 @@ Create a new Looker user with optional role assignment.
 Add existing user to a Looker group.
 
 **Payload:**
+
 ```json
 {
   "groupId": 123,
@@ -144,6 +155,7 @@ Add existing user to a Looker group.
 ```
 
 **Returns:**
+
 ```json
 {
   "status": "ok",
@@ -160,6 +172,7 @@ Add existing user to a Looker group.
 Provision multiple users at once, optionally adding them to a group.
 
 **Payload:**
+
 ```json
 {
   "users": [
@@ -180,6 +193,7 @@ Provision multiple users at once, optionally adding them to a group.
 ```
 
 **Returns:**
+
 ```json
 {
   "status": "ok",
@@ -197,6 +211,7 @@ Provision multiple users at once, optionally adding them to a group.
 Create a new database connection in Looker.
 
 **Payload (BigQuery):**
+
 ```json
 {
   "name": "bigquery_prod",
@@ -208,6 +223,7 @@ Create a new database connection in Looker.
 ```
 
 **Payload (PostgreSQL):**
+
 ```json
 {
   "name": "postgres_warehouse",
@@ -221,6 +237,7 @@ Create a new database connection in Looker.
 ```
 
 **Returns:**
+
 ```json
 {
   "status": "ok",
@@ -235,6 +252,7 @@ Create a new database connection in Looker.
 Test an existing database connection.
 
 **Payload:**
+
 ```json
 {
   "connectionName": "bigquery_prod"
@@ -242,6 +260,7 @@ Test an existing database connection.
 ```
 
 **Returns:**
+
 ```json
 {
   "status": "ok",
@@ -258,6 +277,7 @@ Test an existing database connection.
 Delete a database connection.
 
 **Payload:**
+
 ```json
 {
   "connectionName": "old_connection"
@@ -265,6 +285,7 @@ Delete a database connection.
 ```
 
 **Returns:**
+
 ```json
 {
   "status": "ok",
@@ -279,11 +300,13 @@ Delete a database connection.
 List all database connections.
 
 **Payload:**
+
 ```json
 {}
 ```
 
 **Returns:**
+
 ```json
 {
   "status": "ok",
@@ -312,6 +335,7 @@ List all database connections.
 Create a new LookML project from a Git repository.
 
 **Payload:**
+
 ```json
 {
   "name": "analytics_project",
@@ -321,6 +345,7 @@ Create a new LookML project from a Git repository.
 ```
 
 **Returns:**
+
 ```json
 {
   "status": "ok",
@@ -335,6 +360,7 @@ Create a new LookML project from a Git repository.
 Deploy LookML project to production.
 
 **Payload:**
+
 ```json
 {
   "projectId": "analytics_project"
@@ -342,6 +368,7 @@ Deploy LookML project to production.
 ```
 
 **Returns:**
+
 ```json
 {
   "status": "ok",
@@ -356,6 +383,7 @@ Deploy LookML project to production.
 Validate LookML project for errors and warnings.
 
 **Payload:**
+
 ```json
 {
   "projectId": "analytics_project"
@@ -363,6 +391,7 @@ Validate LookML project for errors and warnings.
 ```
 
 **Returns:**
+
 ```json
 {
   "status": "ok",
@@ -375,6 +404,7 @@ Validate LookML project for errors and warnings.
 ```
 
 **Error Response:**
+
 ```json
 {
   "status": "ok",
@@ -395,6 +425,7 @@ Validate LookML project for errors and warnings.
 Create a Looker folder for a project.
 
 **Payload:**
+
 ```json
 {
   "projectId": "analytics-project",
@@ -403,6 +434,7 @@ Create a Looker folder for a project.
 ```
 
 **Returns:**
+
 ```json
 {
   "status": "ok",
@@ -418,6 +450,7 @@ Create a Looker folder for a project.
 Clone a dashboard template to a project folder.
 
 **Payload:**
+
 ```json
 {
   "templateDashboardId": 101,
@@ -427,6 +460,7 @@ Clone a dashboard template to a project folder.
 ```
 
 **Returns:**
+
 ```json
 {
   "status": "ok",
@@ -442,6 +476,7 @@ Clone a dashboard template to a project folder.
 Move a dashboard to a different folder.
 
 **Payload:**
+
 ```json
 {
   "dashboardId": 789,
@@ -450,6 +485,7 @@ Move a dashboard to a different folder.
 ```
 
 **Returns:**
+
 ```json
 {
   "status": "ok",
@@ -465,6 +501,7 @@ Move a dashboard to a different folder.
 Create a scheduled dashboard delivery via email.
 
 **Payload:**
+
 ```json
 {
   "dashboardId": 789,
@@ -479,12 +516,14 @@ Create a scheduled dashboard delivery via email.
 ```
 
 **Cron Schedule Examples:**
+
 - `0 9 * * *` - Daily at 9 AM
 - `0 9 * * 1` - Every Monday at 9 AM
 - `0 9 1 * *` - First day of month at 9 AM
 - `0 0 * * 0` - Every Sunday at midnight
 
 **Returns:**
+
 ```json
 {
   "status": "ok",
@@ -543,11 +582,13 @@ All functions return consistent error responses:
 ### Common Errors
 
 - **SDK Unavailable**: Looker SDK not initialized
+
   ```json
   {"status": "sdk_unavailable"}
   ```
 
 - **Validation Error**: Invalid payload
+
   ```json
   {
     "status": "validation_error",
@@ -556,6 +597,7 @@ All functions return consistent error responses:
   ```
 
 - **Provisioning Error**: Looker API operation failed
+
   ```json
   {
     "status": "error",

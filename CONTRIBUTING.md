@@ -29,12 +29,14 @@ This project adheres to a code of conduct that all contributors are expected to 
 ### Development Environment Setup
 
 1. **Clone the repository**
+
    ```bash
    git clone https://github.com/erayguner/iam-looker.git
    cd iam-looker
    ```
 
 2. **Set up development environment**
+
    ```bash
    make dev-setup
    ```
@@ -45,12 +47,14 @@ This project adheres to a code of conduct that all contributors are expected to 
    - Configure the development environment
 
 3. **Configure environment variables**
+
    ```bash
    cp .env.example .env
    # Edit .env with your configuration
    ```
 
 4. **Verify installation**
+
    ```bash
    make test
    ```
@@ -81,6 +85,7 @@ git checkout -b fix/your-bug-fix
 ```
 
 Branch naming conventions:
+
 - `feature/` - New features
 - `fix/` - Bug fixes
 - `docs/` - Documentation updates
@@ -127,6 +132,7 @@ git commit -m "docs: update README with new examples"
 ```
 
 Commit types:
+
 - `feat`: New feature
 - `fix`: Bug fix
 - `docs`: Documentation changes
@@ -339,6 +345,7 @@ Fixes #456
    - Keep PR scope focused and manageable
 
 4. **PR Description Template**
+
    ```markdown
    ## Description
    Brief description of changes
@@ -387,6 +394,7 @@ Fixes #456
 ### Pre-commit Security Checks
 
 The pre-commit hooks include:
+
 - Secret detection (detect-secrets)
 - Security linting (Bandit)
 - Dependency scanning (Safety)
@@ -401,6 +409,7 @@ The pre-commit hooks include:
 ## Questions?
 
 If you have questions:
+
 1. Check existing documentation
 2. Search closed issues
 3. Open a new issue with the `question` label

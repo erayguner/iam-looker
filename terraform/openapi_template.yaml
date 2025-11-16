@@ -21,4 +21,3 @@ paths:
         address: ${create_dashboard_uri}
       responses:
         '200': { description: OK }
-
