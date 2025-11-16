@@ -1,0 +1,348 @@
+name: Deploy Terraform Infrastructure
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'terraform/**'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'terraform/**'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy'
+        required: true
+        type: choice
+        options:
+          - development
+          - staging
+          - production
+        default: 'development'
+      action:
+        description: 'Terraform action'
+        required: true
+        type: choice
+        options:
+          - plan
+          - apply
+          - destroy
+        default: 'plan'
+
+permissions:
+  contents: read
+  id-token: write
+  pull-requests: write
+
+env:
+  TERRAFORM_VERSION: "1.10.3"
+  TF_IN_AUTOMATION: "true"
+
+jobs:
+  setup:
+    name: Setup Environment
+    runs-on: ubuntu-latest
+    outputs:
+      environment: ${{ steps.set-env.outputs.environment }}
+      project_id: ${{ steps.set-env.outputs.project_id }}
+      tf_action: ${{ steps.set-env.outputs.tf_action }}
+      working_directory: ${{ steps.set-env.outputs.working_directory }}
+
+    steps:
+      - name: Determine environment and action
+        id: set-env
+        run: |
+          # Determine environment
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            ENV="${{ github.event.inputs.environment }}"
+            ACTION="${{ github.event.inputs.action }}"
+          elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            ENV="development"
+            ACTION="plan"
+          else
+            ENV="development"
+            ACTION="apply"
+          fi
+
+          echo "environment=$ENV" >> $GITHUB_OUTPUT
+          echo "tf_action=$ACTION" >> $GITHUB_OUTPUT
+          echo "working_directory=terraform" >> $GITHUB_OUTPUT
+
+          # Set project ID based on environment
+          case $ENV in
+            production)
+              echo "project_id=${{ secrets.GCP_PROJECT_ID_PROD }}" >> $GITHUB_OUTPUT
+              ;;
+            staging)
+              echo "project_id=${{ secrets.GCP_PROJECT_ID_STAGING }}" >> $GITHUB_OUTPUT
+              ;;
+            *)
+              echo "project_id=${{ secrets.GCP_PROJECT_ID_DEV }}" >> $GITHUB_OUTPUT
+              ;;
+          esac
+
+  terraform-plan:
+    name: Terraform Plan (${{ needs.setup.outputs.environment }})
+    runs-on: ubuntu-latest
+    needs: setup
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: ${{ needs.setup.outputs.working_directory }}
+    environment:
+      name: ${{ needs.setup.outputs.environment }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+
+      - name: Setup gcloud CLI
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Create terraform.tfvars
+        run: |
+          cat > terraform.tfvars <<EOF
+          project_id     = "${{ needs.setup.outputs.project_id }}"
+          project_number = "${{ secrets.GCP_PROJECT_NUMBER }}"
+          region         = "${{ secrets.GCP_REGION || 'us-central1' }}"
+          source_bucket  = "${{ secrets.TF_SOURCE_BUCKET }}"
+          vpc_network    = "${{ secrets.VPC_NETWORK }}"
+          EOF
+
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive
+        continue-on-error: true
+
+      - name: Terraform Init
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}" \
+            -backend-config="prefix=terraform/state/${{ needs.setup.outputs.environment }}"
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Plan
+        id: plan
+        run: |
+          terraform plan \
+            -var-file=terraform.tfvars \
+            -out=tfplan \
+            -no-color \
+            | tee plan_output.txt
+
+      - name: Upload plan artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan-${{ needs.setup.outputs.environment }}-${{ github.sha }}
+          path: |
+            ${{ needs.setup.outputs.working_directory }}/tfplan
+            ${{ needs.setup.outputs.working_directory }}/plan_output.txt
+          retention-days: 30
+
+      - name: Comment PR with plan
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const plan = fs.readFileSync('terraform/plan_output.txt', 'utf8');
+            const truncatedPlan = plan.length > 65000 ? plan.substring(0, 65000) + '\n\n... (truncated)' : plan;
+
+            const output = `#### Terraform Plan 📖 \`${{ needs.setup.outputs.environment }}\`
+
+            <details><summary>Show Plan</summary>
+
+            \`\`\`terraform
+            ${truncatedPlan}
+            \`\`\`
+
+            </details>
+
+            *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`, Workflow: \`${{ github.workflow }}\`*`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            });
+
+      - name: Create plan summary
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY <<EOF
+          ## 📋 Terraform Plan Summary
+
+          **Environment:** \`${{ needs.setup.outputs.environment }}\`
+          **Project:** \`${{ needs.setup.outputs.project_id }}\`
+
+          ### Plan Output
+          \`\`\`
+          $(head -100 plan_output.txt)
+          \`\`\`
+
+          [View full plan in artifacts](#)
+          EOF
+
+  terraform-apply:
+    name: Terraform Apply (${{ needs.setup.outputs.environment }})
+    runs-on: ubuntu-latest
+    needs: [setup, terraform-plan]
+    if: |
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply')
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: ${{ needs.setup.outputs.working_directory }}
+    environment:
+      name: ${{ needs.setup.outputs.environment }}
+      url: https://console.cloud.google.com/home/dashboard?project=${{ needs.setup.outputs.project_id }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+
+      - name: Setup gcloud CLI
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Create terraform.tfvars
+        run: |
+          cat > terraform.tfvars <<EOF
+          project_id     = "${{ needs.setup.outputs.project_id }}"
+          project_number = "${{ secrets.GCP_PROJECT_NUMBER }}"
+          region         = "${{ secrets.GCP_REGION || 'us-central1' }}"
+          source_bucket  = "${{ secrets.TF_SOURCE_BUCKET }}"
+          vpc_network    = "${{ secrets.VPC_NETWORK }}"
+          EOF
+
+      - name: Terraform Init
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}" \
+            -backend-config="prefix=terraform/state/${{ needs.setup.outputs.environment }}"
+
+      - name: Download plan artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: tfplan-${{ needs.setup.outputs.environment }}-${{ github.sha }}
+          path: ${{ needs.setup.outputs.working_directory }}
+
+      - name: Terraform Apply
+        run: |
+          terraform apply \
+            -auto-approve \
+            -no-color \
+            tfplan \
+            | tee apply_output.txt
+
+      - name: Upload apply output
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: tfapply-${{ needs.setup.outputs.environment }}-${{ github.sha }}
+          path: ${{ needs.setup.outputs.working_directory }}/apply_output.txt
+          retention-days: 90
+
+      - name: Create apply summary
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY <<EOF
+          ## ✅ Terraform Apply Complete
+
+          **Environment:** \`${{ needs.setup.outputs.environment }}\`
+          **Project:** \`${{ needs.setup.outputs.project_id }}\`
+          **Applied at:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')
+
+          ### Resources
+          \`\`\`
+          $(terraform state list | head -20)
+          \`\`\`
+
+          [View Console](https://console.cloud.google.com/home/dashboard?project=${{ needs.setup.outputs.project_id }})
+          EOF
+
+  terraform-destroy:
+    name: Terraform Destroy (${{ needs.setup.outputs.environment }})
+    runs-on: ubuntu-latest
+    needs: [setup]
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'destroy'
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: ${{ needs.setup.outputs.working_directory }}
+    environment:
+      name: ${{ needs.setup.outputs.environment }}-destroy
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+
+      - name: Create terraform.tfvars
+        run: |
+          cat > terraform.tfvars <<EOF
+          project_id     = "${{ needs.setup.outputs.project_id }}"
+          project_number = "${{ secrets.GCP_PROJECT_NUMBER }}"
+          region         = "${{ secrets.GCP_REGION || 'us-central1' }}"
+          source_bucket  = "${{ secrets.TF_SOURCE_BUCKET }}"
+          vpc_network    = "${{ secrets.VPC_NETWORK }}"
+          EOF
+
+      - name: Terraform Init
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}" \
+            -backend-config="prefix=terraform/state/${{ needs.setup.outputs.environment }}"
+
+      - name: Terraform Destroy
+        run: |
+          terraform destroy \
+            -var-file=terraform.tfvars \
+            -auto-approve \
+            -no-color
+
+      - name: Create destroy summary
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY <<EOF
+          ## 🗑️ Terraform Destroy Complete
+
+          **Environment:** \`${{ needs.setup.outputs.environment }}\`
+          **Destroyed at:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')
+
+          All resources have been destroyed.
+          EOF
