@@ -57,6 +57,13 @@ jobs:
           # ADD YOUR CUSTOM ENV VARIABLES HERE OR DEFINE THEM IN A FILE .mega-linter.yml AT THE ROOT OF YOUR REPOSITORY
           # DISABLE: COPYPASTE,SPELL # Uncomment to disable copy-paste and spell checks
 
+      # Fix permissions before artifact upload
+      - name: Fix MegaLinter report permissions
+        if: success() || failure()
+        run: |
+          sudo chmod -R a+r megalinter-reports 2>/dev/null || true
+          sudo chmod -R a+r mega-linter.log 2>/dev/null || true
+
       # Upload MegaLinter artifacts
       - name: Archive production artifacts
         if: success() || failure()
