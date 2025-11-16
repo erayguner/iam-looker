@@ -28,4 +28,3 @@ resource "google_service_account_iam_binding" "ci_wif" {
     "principalSet://iam.googleapis.com/projects/${var.project_number}/locations/global/workloadIdentityPools/${var.pool_id}/attribute.repository/${var.repository}"
   ]
 }
-

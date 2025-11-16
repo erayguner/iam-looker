@@ -1,24 +1,143 @@
+---
 openapi: 3.0.0
 info:
   title: Looker Automation API
+  description: Unified API for Looker provisioning and automation operations
   version: v1
+  contact:
+    name: Data Platform Team
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+
+servers:
+  - description: API Gateway
+    url: https://looker-automation-gw.apigateway.{region}.cloud.goog
+
 paths:
   /add-group:
     post:
+      summary: Add Group to SAML Configuration
+      description: Adds a Looker group to the SAML configuration
+      operationId: addGroupToSaml
       x-google-backend:
         address: ${add_group_uri}
+        protocol: h2
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - groupEmail
+                - groupId
+              properties:
+                groupEmail:
+                  type: string
+                  format: email
+                  example: analysts@example.com
+                groupId:
+                  type: integer
+                  example: 123
       responses:
-        '200': { description: OK }
+        '200':
+          description: Group added successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  groupId:
+                    type: integer
+        '400':
+          description: Invalid request
+        '500':
+          description: Server error
+
   /create-folder:
     post:
+      summary: Create Looker Folder
+      description: Creates a new folder in Looker
+      operationId: createFolder
       x-google-backend:
         address: ${create_folder_uri}
+        protocol: h2
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - folderName
+              properties:
+                folderName:
+                  type: string
+                  example: Analytics Team
+                parentId:
+                  type: string
+                  example: "1"
       responses:
-        '200': { description: OK }
+        '200':
+          description: Folder created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  folderId:
+                    type: string
+        '400':
+          description: Invalid request
+        '500':
+          description: Server error
+
   /create-dashboard:
     post:
+      summary: Clone Dashboard from Template
+      description: Creates a new dashboard by cloning from a template
+      operationId: cloneDashboard
       x-google-backend:
         address: ${create_dashboard_uri}
+        protocol: h2
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - templateDashboardId
+                - dashboardName
+                - folderId
+              properties:
+                templateDashboardId:
+                  type: integer
+                  example: 42
+                dashboardName:
+                  type: string
+                  example: Analytics Dashboard - Team A
+                folderId:
+                  type: string
+                  example: "123"
       responses:
-        '200': { description: OK }
-
+        '200':
+          description: Dashboard cloned successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  dashboardId:
+                    type: integer
+        '400':
+          description: Invalid request
+        '500':
+          description: Server error

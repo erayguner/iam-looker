@@ -1,3 +1,7 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "iam-looker"
 version = "0.1.2"
@@ -5,12 +9,342 @@ description = "Looker user onboarding automation"
 readme = "README.md"
 requires-python = ">=3.12"
 license = {text = "Apache-2.0"}
+authors = [
+    {name = "Data Platform Engineering"}
+]
+keywords = ["looker", "automation", "gcp", "cloud-functions", "provisioning"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed",
+]
 
-[tool.pytest.ini_options]
-python_files = ["tests/*.py"]
-
-[tool.black]
-line-length = 100
+dependencies = [
+    "looker_sdk>=24.0.0,<25",
+    "python-dotenv>=1.0.0,<2",
+    "pydantic[email]>=2.7,<3",
+    "pydantic-settings>=2.3.0,<3",
+]
 
 [project.optional-dependencies]
-dev = ["pytest", "black", "pydantic"]
+dev = [
+    # Testing
+    "pytest>=8.3.0,<9",
+    "pytest-cov>=6.0.0,<7",
+    "pytest-asyncio>=0.25.0,<1",
+    "pytest-mock>=3.14.0,<4",
+    "pytest-xdist>=3.6.0,<4",
+
+    # Code quality
+    "ruff>=0.9.2,<1",
+    "mypy>=1.14.1,<2",
+    "pre-commit>=4.0.1,<5",
+
+    # Type stubs
+    "types-requests>=2.32.0",
+
+    # Security
+    "bandit[toml]>=1.8.0,<2",
+    "safety>=3.3.0,<4",
+
+    # Build tools
+    "build>=1.2.2,<2",
+    "twine>=6.0.0,<7",
+]
+
+terraform = [
+    "checkov>=3.2.0,<4",
+]
+
+all = [
+    "iam-looker[dev,terraform]",
+]
+
+[project.urls]
+Homepage = "https://github.com/erayguner/iam-looker"
+Documentation = "https://github.com/erayguner/iam-looker/blob/main/README.md"
+Repository = "https://github.com/erayguner/iam-looker"
+Issues = "https://github.com/erayguner/iam-looker/issues"
+
+[project.scripts]
+iam-looker = "iam_looker.cli:main"
+
+# Ruff configuration (replaces Black, isort, flake8, pylint)
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+indent-width = 4
+
+# Exclude common directories
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".ipynb_checkpoints",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pyenv",
+    ".pytest_cache",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    ".vscode",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "site-packages",
+    "venv",
+]
+
+[tool.ruff.lint]
+# Enable comprehensive rule sets
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # Pyflakes
+    "I",      # isort
+    "N",      # pep8-naming
+    "UP",     # pyupgrade
+    "YTT",    # flake8-2020
+    "ASYNC",  # flake8-async
+    "S",      # flake8-bandit (security)
+    "BLE",    # flake8-blind-except
+    "B",      # flake8-bugbear
+    "A",      # flake8-builtins
+    "COM",    # flake8-commas
+    "C4",     # flake8-comprehensions
+    "DTZ",    # flake8-datetimez
+    "T10",    # flake8-debugger
+    "EM",     # flake8-errmsg
+    "EXE",    # flake8-executable
+    "FA",     # flake8-future-annotations
+    "ISC",    # flake8-implicit-str-concat
+    "ICN",    # flake8-import-conventions
+    "G",      # flake8-logging-format
+    "INP",    # flake8-no-pep420
+    "PIE",    # flake8-pie
+    "T20",    # flake8-print
+    "PYI",    # flake8-pyi
+    "PT",     # flake8-pytest-style
+    "Q",      # flake8-quotes
+    "RSE",    # flake8-raise
+    "RET",    # flake8-return
+    "SLF",    # flake8-self
+    "SLOT",   # flake8-slots
+    "SIM",    # flake8-simplify
+    "TID",    # flake8-tidy-imports
+    "TCH",    # flake8-type-checking
+    "ARG",    # flake8-unused-arguments
+    "PTH",    # flake8-use-pathlib
+    "TD",     # flake8-todos
+    "FIX",    # flake8-fixme
+    "ERA",    # eradicate
+    "PD",     # pandas-vet
+    "PGH",    # pygrep-hooks
+    "PL",     # Pylint
+    "TRY",    # tryceratops
+    "FLY",    # flynt
+    "PERF",   # Perflint
+    "RUF",    # Ruff-specific rules
+]
+
+ignore = [
+    "E501",    # Line too long (handled by formatter)
+    "S101",    # Use of assert (needed for pytest)
+    "PLR0913", # Too many arguments
+    "TD002",   # Missing author in TODO
+    "TD003",   # Missing issue link in TODO
+    "FIX002",  # Line contains TODO
+    "COM812",  # Trailing comma missing (conflicts with formatter)
+    "ISC001",  # Implicit string concatenation (conflicts with formatter)
+    "TRY003",  # Long exception messages (acceptable for clarity)
+    "TRY301",  # Abstract raise to inner function (overly pedantic)
+    "EM101",   # Exception string literals (acceptable for simplicity)
+    "EM102",   # Exception f-strings (acceptable for dynamic messages)
+]
+
+# Allow fix for all enabled rules (when `--fix` is provided)
+fixable = ["ALL"]
+unfixable = []
+
+# Allow unused variables when underscore-prefixed
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = [
+    "S101",    # Use of assert
+    "ARG",     # Unused function args
+    "PLR2004", # Magic value used in comparison
+    "S105",    # Possible hardcoded password
+    "S106",    # Possible hardcoded password
+]
+"scripts/**/*.py" = [
+    "T20",     # Print found
+    "INP001",  # Implicit namespace package (scripts don't need __init__.py)
+]
+"functions/**/*.py" = [
+    "ARG001",  # Unused function argument (context required by Cloud Functions interface)
+    "BLE001",  # Blind except (acceptable for Cloud Function error handling)
+    "TRY300",  # Consider else block (minor style preference)
+    "T201",    # Print found (acceptable for __main__ block)
+]
+"src/iam_looker/cli.py" = [
+    "T201",    # Print found (CLI tool needs to print)
+    "BLE001",  # Blind except (acceptable for CLI error handling)
+]
+"src/iam_looker/handler.py" = [
+    "BLE001",  # Blind except (acceptable for robust error handling)
+    "ARG001",  # Unused context parameter (required by Cloud Functions interface)
+    "TRY003",  # Long exception messages (acceptable for detailed error reporting)
+    "EM102",   # F-string in exception (acceptable for dynamic messages)
+    "B904",    # Exception chaining (not always needed for validation errors)
+]
+"src/iam_looker/models.py" = [
+    "N815",    # mixedCase variables (required for API compatibility with JSON payloads)
+    "N805",    # cls vs self (Pydantic validators use cls)
+]
+"src/iam_looker/provisioner.py" = [
+    "BLE001",  # Blind except (wrapping SDK calls requires catching all exceptions)
+    "B904",    # Exception chaining (ProvisioningError wraps SDK errors)
+    "TRY300",  # Else block (return in try block is acceptable pattern)
+]
+"docs/**/*" = [
+    "INP001",  # Documentation directories don't need __init__.py
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+docstring-code-format = true
+docstring-code-line-length = "dynamic"
+
+[tool.ruff.lint.isort]
+known-first-party = ["iam_looker"]
+force-sort-within-sections = true
+combine-as-imports = true
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+# MyPy configuration
+[tool.mypy]
+python_version = "3.12"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = false
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+strict_concatenate = true
+ignore_missing_imports = true
+namespace_packages = true
+show_error_codes = true
+show_error_context = true
+pretty = true
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = false
+
+# Pytest configuration
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "-ra",
+    "--strict-markers",
+    "--strict-config",
+    "--showlocals",
+    "--cov=src/iam_looker",
+    "--cov-report=term-missing:skip-covered",
+    "--cov-report=html",
+    "--cov-report=xml",
+    "--cov-fail-under=80",
+]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+]
+filterwarnings = [
+    "error",
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
+]
+
+# Coverage configuration
+[tool.coverage.run]
+source = ["src/iam_looker"]
+branch = true
+parallel = true
+omit = [
+    "*/tests/*",
+    "*/__pycache__/*",
+    "*/site-packages/*",
+    "*/legacy/*",
+]
+
+[tool.coverage.report]
+precision = 2
+show_missing = true
+skip_covered = false
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
+
+[tool.coverage.html]
+directory = "htmlcov"
+
+# Bandit security checks
+[tool.bandit]
+exclude_dirs = [
+    "tests",
+    ".venv",
+    "venv",
+]
+skips = ["B101", "B601"]
+
+[tool.bandit.assert_used]
+exclude = ["*_test.py", "test_*.py"]
+
+# Black configuration (keeping for compatibility)
+[tool.black]
+line-length = 100
+target-version = ["py312"]
+include = '\.pyi?$'

@@ -15,4 +15,3 @@ def test_handle_event_validation_error():
     event = {"projectId": "bad", "groupEmail": "not-an-email"}
     result = handle_event(event)
     assert result["status"] == "validation_error"
-

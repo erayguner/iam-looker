@@ -1,0 +1,369 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+-*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., v1.0.0)'
+        required: true
+        type: string
+      prerelease:
+        description: 'Mark as pre-release'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  packages: write
+  id-token: write
+
+env:
+  PYTHON_VERSION: "3.12"
+
+jobs:
+  validate:
+    name: Validate Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    outputs:
+      version: ${{ steps.extract-version.outputs.version }}
+      is_prerelease: ${{ steps.extract-version.outputs.is_prerelease }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract version
+        id: extract-version
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            VERSION="${{ github.event.inputs.version }}"
+            IS_PRERELEASE="${{ github.event.inputs.prerelease }}"
+          else
+            VERSION=${GITHUB_REF#refs/tags/}
+            if [[ "$VERSION" =~ -[a-z]+ ]]; then
+              IS_PRERELEASE="true"
+            else
+              IS_PRERELEASE="false"
+            fi
+          fi
+
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "clean_version=${VERSION#v}" >> $GITHUB_OUTPUT
+          echo "is_prerelease=$IS_PRERELEASE" >> $GITHUB_OUTPUT
+
+          echo "📦 Release version: $VERSION"
+          echo "🏷️ Pre-release: $IS_PRERELEASE"
+
+      - name: Verify version in pyproject.toml
+        run: |
+          TOML_VERSION=$(grep '^version = ' pyproject.toml | sed 's/version = "\(.*\)"/\1/')
+          RELEASE_VERSION="${{ steps.extract-version.outputs.clean_version }}"
+
+          echo "pyproject.toml version: $TOML_VERSION"
+          echo "Release version: $RELEASE_VERSION"
+
+          if [[ "$TOML_VERSION" != "$RELEASE_VERSION" ]]; then
+            echo "::warning::Version mismatch: pyproject.toml=$TOML_VERSION, release=$RELEASE_VERSION"
+          fi
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Run tests
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .[dev]
+          pytest -v -m "not integration"
+        env:
+          LOOKERSDK_BASE_URL: "https://mock.looker.com"
+          LOOKERSDK_CLIENT_ID: "mock"
+          LOOKERSDK_CLIENT_SECRET: "mock"
+
+  build-artifacts:
+    name: Build Release Artifacts
+    runs-on: ubuntu-latest
+    needs: validate
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install build dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install build twine
+
+      - name: Build Python package
+        run: python -m build
+
+      - name: Check package
+        run: twine check dist/*
+
+      - name: Create Cloud Function deployment packages
+        run: |
+          mkdir -p release-artifacts
+
+          # Create main deployment package
+          mkdir -p cf-package
+          cp -r src cf-package/
+          cp -r functions cf-package/
+          cp -r functions cf-package/
+          cp requirements.txt cf-package/
+          cp pyproject.toml cf-package/
+          cp README.md cf-package/
+          cp LICENSE cf-package/
+
+          # Create zip
+          cd cf-package
+          zip -r ../release-artifacts/iam-looker-cloud-functions-${{ needs.validate.outputs.version }}.zip .
+          cd ..
+
+          # Create checksums
+          cd release-artifacts
+          sha256sum *.zip > checksums.txt
+          cd ..
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-artifacts-${{ needs.validate.outputs.version }}
+          path: |
+            dist/
+            release-artifacts/
+          retention-days: 90
+
+  build-docker:
+    name: Build and Push Docker Images
+    runs-on: ubuntu-latest
+    needs: [validate, build-artifacts]
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=semver,pattern={{version}},value=${{ needs.validate.outputs.version }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ needs.validate.outputs.version }}
+            type=semver,pattern={{major}},value=${{ needs.validate.outputs.version }}
+            type=raw,value=latest,enable=${{ needs.validate.outputs.is_prerelease == 'false' }}
+            type=sha,prefix={{branch}}-
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64,linux/arm64
+          build-args: |
+            VERSION=${{ needs.validate.outputs.clean_version }}
+            BUILD_DATE=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.created'] }}
+            VCS_REF=${{ github.sha }}
+
+  generate-changelog:
+    name: Generate Changelog
+    runs-on: ubuntu-latest
+    needs: validate
+    timeout-minutes: 10
+    outputs:
+      changelog: ${{ steps.changelog.outputs.changelog }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          # Get previous tag
+          PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || git rev-list --max-parents=0 HEAD)
+          CURRENT_TAG="${{ needs.validate.outputs.version }}"
+
+          echo "Generating changelog from $PREVIOUS_TAG to $CURRENT_TAG"
+
+          # Generate changelog
+          CHANGELOG=$(git log $PREVIOUS_TAG..HEAD --pretty=format:"- %s (%h)" --no-merges)
+
+          # Group by type
+          FEATURES=$(echo "$CHANGELOG" | grep -i "^- feat" || true)
+          FIXES=$(echo "$CHANGELOG" | grep -i "^- fix" || true)
+          DOCS=$(echo "$CHANGELOG" | grep -i "^- docs" || true)
+          CHORES=$(echo "$CHANGELOG" | grep -i "^- chore" || true)
+          OTHERS=$(echo "$CHANGELOG" | grep -v -i "^- \(feat\|fix\|docs\|chore\)" || true)
+
+          # Build formatted changelog
+          FORMATTED_CHANGELOG="## What's Changed\n\n"
+
+          if [ -n "$FEATURES" ]; then
+            FORMATTED_CHANGELOG="${FORMATTED_CHANGELOG}### ✨ Features\n${FEATURES}\n\n"
+          fi
+
+          if [ -n "$FIXES" ]; then
+            FORMATTED_CHANGELOG="${FORMATTED_CHANGELOG}### 🐛 Bug Fixes\n${FIXES}\n\n"
+          fi
+
+          if [ -n "$DOCS" ]; then
+            FORMATTED_CHANGELOG="${FORMATTED_CHANGELOG}### 📚 Documentation\n${DOCS}\n\n"
+          fi
+
+          if [ -n "$CHORES" ]; then
+            FORMATTED_CHANGELOG="${FORMATTED_CHANGELOG}### 🔧 Maintenance\n${CHORES}\n\n"
+          fi
+
+          if [ -n "$OTHERS" ]; then
+            FORMATTED_CHANGELOG="${FORMATTED_CHANGELOG}### 🔄 Other Changes\n${OTHERS}\n\n"
+          fi
+
+          # Save to file
+          echo -e "$FORMATTED_CHANGELOG" > changelog.md
+
+          # Set output (escape newlines)
+          {
+            echo 'changelog<<EOF'
+            cat changelog.md
+            echo EOF
+          } >> $GITHUB_OUTPUT
+
+      - name: Upload changelog
+        uses: actions/upload-artifact@v4
+        with:
+          name: changelog-${{ needs.validate.outputs.version }}
+          path: changelog.md
+          retention-days: 90
+
+  create-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: [validate, build-artifacts, build-docker, generate-changelog]
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: release-artifacts-${{ needs.validate.outputs.version }}
+          path: release-artifacts
+
+      - name: Download changelog
+        uses: actions/download-artifact@v4
+        with:
+          name: changelog-${{ needs.validate.outputs.version }}
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.validate.outputs.version }}
+          name: Release ${{ needs.validate.outputs.version }}
+          body_path: changelog.md
+          draft: false
+          prerelease: ${{ needs.validate.outputs.is_prerelease == 'true' }}
+          generate_release_notes: false
+          files: |
+            release-artifacts/dist/*
+            release-artifacts/release-artifacts/*
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+  publish-pypi:
+    name: Publish to PyPI
+    runs-on: ubuntu-latest
+    needs: [validate, build-artifacts, create-release]
+    if: needs.validate.outputs.is_prerelease == 'false'
+    timeout-minutes: 10
+    environment:
+      name: pypi
+      url: https://pypi.org/project/iam-looker/
+
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: release-artifacts-${{ needs.validate.outputs.version }}
+          path: release-artifacts
+
+      - name: Publish to PyPI
+        if: false  # Enable when ready to publish
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}
+          packages_dir: release-artifacts/dist/
+
+  summary:
+    name: Release Summary
+    runs-on: ubuntu-latest
+    needs: [validate, build-artifacts, build-docker, create-release]
+    if: always()
+
+    steps:
+      - name: Create summary
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY <<EOF
+          ## 🎉 Release Summary
+
+          **Version:** \`${{ needs.validate.outputs.version }}\`
+          **Type:** ${{ needs.validate.outputs.is_prerelease == 'true' && 'Pre-release 🚧' || 'Stable Release ✅' }}
+          **Created:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')
+
+          ### 📦 Artifacts
+          - ✅ Python Package (PyPI)
+          - ✅ Docker Image (ghcr.io)
+          - ✅ Cloud Function Package
+
+          ### 🔗 Links
+          - [GitHub Release](https://github.com/${{ github.repository }}/releases/tag/${{ needs.validate.outputs.version }})
+          - [Docker Image](https://ghcr.io/${{ github.repository }}:${{ needs.validate.outputs.clean_version }})
+
+          ### 📊 Build Status
+          - Build Artifacts: ${{ needs.build-artifacts.result == 'success' && '✅' || '❌' }}
+          - Docker Build: ${{ needs.build-docker.result == 'success' && '✅' || '❌' }}
+          - GitHub Release: ${{ needs.create-release.result == 'success' && '✅' || '❌' }}
+
+          ---
+          **Commit:** \`${{ github.sha }}\`
+          EOF
