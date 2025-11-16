@@ -333,14 +333,23 @@ jobs:
           pip install -e .[dev]
 
       - name: Authenticate to Google Cloud
-        if: github.event_name == 'push' && secrets.GCP_PROJECT_ID != ''
+        if: |
+          github.event_name == 'push' &&
+          github.ref == 'refs/heads/main' &&
+          secrets.WIF_PROVIDER != '' &&
+          secrets.WIF_SERVICE_ACCOUNT != ''
         uses: google-github-actions/auth@v2
         with:
           workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
           service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
 
       - name: Run integration tests
-        if: github.event_name == 'push' && secrets.GCP_PROJECT_ID != ''
+        if: |
+          github.event_name == 'push' &&
+          github.ref == 'refs/heads/main' &&
+          secrets.GCP_PROJECT_ID != '' &&
+          secrets.WIF_PROVIDER != '' &&
+          secrets.WIF_SERVICE_ACCOUNT != ''
         run: |
           pytest -v -m integration
         env:
