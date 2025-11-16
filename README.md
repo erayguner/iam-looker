@@ -90,20 +90,28 @@ python functions/main.py '{"projectId":"demo","groupEmail":"demo-group@company.c
 ```
 iam-looker/
 ├── src/iam_looker/          # Main package (2025 src layout)
-│   ├── handler.py           # Cloud Function entrypoint handler
-│   ├── models.py            # Pydantic models for validation
-│   ├── settings.py          # Centralized configuration
-│   ├── provisioner.py       # Looker API orchestration
-│   ├── logging.py           # Structured logging
+│   ├── __init__.py          # Package initialization
+│   ├── cli.py               # CLI commands
 │   ├── exceptions.py        # Custom exceptions
-│   └── cli.py               # CLI commands
+│   ├── handler.py           # Cloud Function handler logic
+│   ├── logging.py           # Structured JSON logging
+│   ├── models.py            # Pydantic models for validation
+│   ├── provisioner.py       # Looker API orchestration
+│   ├── settings.py          # Centralized configuration
+│   └── templates.py         # Dashboard template processing
 ├── functions/               # Cloud Function entry points
-│   └── main.py              # All function handlers
+│   └── main.py              # All Cloud Function handlers
+├── scripts/                 # Utility scripts
+│   └── bootstrap_looker.py  # Manual provisioning helper
+├── tests/                   # Test suite
+│   ├── __init__.py
+│   ├── conftest.py          # Pytest configuration
+│   ├── test_handler.py      # Handler tests
+│   └── test_provisioner.py  # Provisioner tests
 ├── terraform/               # Infrastructure as Code
 │   ├── main.tf              # Main Terraform config
 │   ├── functions.tf         # Cloud Functions deployment
 │   └── modules/wif_github/  # Workload Identity Federation
-├── tests/                   # Test suite
 ├── .github/workflows/       # GitHub Actions CI/CD
 └── pyproject.toml           # Project metadata and config
 ```

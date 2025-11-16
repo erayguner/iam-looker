@@ -126,7 +126,7 @@ jobs:
           mkdir -p cf-package
           cp -r src cf-package/
           cp -r functions cf-package/
-          cp -r cloud_function cf-package/
+          cp -r functions cf-package/
           cp requirements.txt cf-package/
           cp pyproject.toml cf-package/
           cp README.md cf-package/

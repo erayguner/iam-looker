@@ -1,7 +1,8 @@
 import types
 import json
 # NOTE: Legacy test coverage; see test_handler.py for new handler tests.
-from src.looker_provisioner import LookerProvisioner, ValidationError
+from iam_looker.provisioner import LookerProvisioner
+from iam_looker.exceptions import ValidationError
 from iam_looker.handler import handle_event
 from iam_looker.models import ProvisionPayload
 

@@ -131,9 +131,9 @@ jobs:
         run: |
           python -c "from functions.main import add_group_to_saml, create_project_folder, create_dashboard_from_template, provision_looker_project; print('All function imports successful')"
 
-      - name: Test cloud_function/main.py entry point
+      - name: Test functions/main.py entry point
         run: |
-          python -c "from cloud_function.main import provision_looker_project; print('Cloud function import successful')"
+          python -c "from functions.main import provision_looker_project; print('Cloud function import successful')"
 
       - name: Test CLI entry point
         run: |
@@ -293,7 +293,7 @@ jobs:
           mkdir -p artifact
           cp -r src/ artifact/
           cp -r functions/ artifact/
-          cp -r cloud_function/ artifact/
+          cp -r functions/ artifact/
           cp requirements.txt artifact/
           cp pyproject.toml artifact/
 
