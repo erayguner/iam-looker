@@ -699,7 +699,7 @@ def test_connection_error_handling():
     def failing_create(*args, **kwargs):
         raise TestSDKError("Connection creation failed")
 
-    sdk.create_connection = failing_create
+    sdk.create_connection = failing_create  # type: ignore[method-assign]
 
     p = LookerProvisioner(sdk)
 
@@ -714,7 +714,7 @@ def test_project_creation_error_handling():
     def failing_create_project(*args, **kwargs):
         raise TestSDKError("Project creation failed")
 
-    sdk.create_project = failing_create_project
+    sdk.create_project = failing_create_project  # type: ignore[method-assign]
 
     p = LookerProvisioner(sdk)
 

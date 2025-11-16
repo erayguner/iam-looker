@@ -76,7 +76,7 @@ def test_provision_happy_path():
         template_dashboard_ids=[1, 2],
     )
     assert len(result2["dashboardIds"]) == 2  # reused
-    assert sdk.dashboard_copy  # ensure method exists
+    assert hasattr(sdk, "dashboard_copy")  # ensure method exists
 
 
 def test_validation_error():
