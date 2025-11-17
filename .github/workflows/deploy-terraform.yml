@@ -302,7 +302,7 @@ jobs:
             -backend-config="prefix=terraform/state/${{ needs.setup.outputs.environment }}"
 
       - name: Download plan artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: tfplan-${{ needs.setup.outputs.environment }}-${{ github.sha }}
           path: ${{ needs.setup.outputs.working_directory }}
