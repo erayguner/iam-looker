@@ -30,7 +30,7 @@ jobs:
           fi
 
       - name: Get check runs
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         id: check-runs
         with:
           script: |
@@ -75,7 +75,7 @@ jobs:
             };
 
       - name: Get PR files changed
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         id: files-changed
         with:
           script: |
@@ -124,7 +124,7 @@ jobs:
             };
 
       - name: Create status summary comment
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const checksData = ${{ steps.check-runs.outputs.result }};
