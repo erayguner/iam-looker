@@ -3,6 +3,7 @@ from dataclasses import dataclass
 
 # DEPRECATION: Replace with iam_looker.settings.Settings in new code paths.
 
+
 @dataclass
 class AppConfig:
     base_url: str

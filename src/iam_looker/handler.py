@@ -12,12 +12,14 @@ logger = logging.getLogger("iam_looker.handler")
 
 try:
     import looker_sdk
+
     _sdk = looker_sdk.init40()
 except Exception:
     _sdk = None
 
 provisioner = LookerProvisioner(_sdk) if _sdk else None
 PUBSUB_DATA_KEY = "data"
+
 
 def _decode_pubsub(event: dict[str, Any]) -> dict[str, Any]:
     if PUBSUB_DATA_KEY in event:
@@ -35,17 +37,43 @@ def handle_event(event: dict[str, Any], context: Any = None) -> dict[str, Any]:
     try:
         payload = ProvisionPayload(**payload_dict)
     except Exception as e:
-        return ProvisionResult(status="validation_error", projectId=payload_dict.get("projectId", ""), groupEmail=payload_dict.get("groupEmail", ""), error=str(e)).model_dump()
+        return ProvisionResult(
+            status="validation_error",
+            projectId=payload_dict.get("projectId", ""),
+            groupEmail=payload_dict.get("groupEmail", ""),
+            error=str(e),
+        ).model_dump()
     template_ids = payload.templateDashboardIds or settings.template_dashboard_ids
     if provisioner is None:
-        return ProvisionResult(status="sdk_unavailable", projectId=payload.projectId, groupEmail=payload.groupEmail).model_dump()
+        return ProvisionResult(
+            status="sdk_unavailable", projectId=payload.projectId, groupEmail=payload.groupEmail
+        ).model_dump()
     try:
-        result = provisioner.provision(project_id=payload.projectId, group_email=payload.groupEmail, template_dashboard_ids=template_ids)
+        result = provisioner.provision(
+            project_id=payload.projectId,
+            group_email=payload.groupEmail,
+            template_dashboard_ids=template_ids,
+        )
         return ProvisionResult(status="ok", **result).model_dump()
     except ValidationError as ve:
-        return ProvisionResult(status="validation_error", projectId=payload.projectId, groupEmail=payload.groupEmail, error=str(ve)).model_dump()
+        return ProvisionResult(
+            status="validation_error",
+            projectId=payload.projectId,
+            groupEmail=payload.groupEmail,
+            error=str(ve),
+        ).model_dump()
     except ProvisioningError as pe:
-        return ProvisionResult(status="provisioning_error", projectId=payload.projectId, groupEmail=payload.groupEmail, error=str(pe)).model_dump()
+        return ProvisionResult(
+            status="provisioning_error",
+            projectId=payload.projectId,
+            groupEmail=payload.groupEmail,
+            error=str(pe),
+        ).model_dump()
     except Exception as e:
         logger.exception("Unhandled error")
-        return ProvisionResult(status="unknown_error", projectId=payload.projectId, groupEmail=payload.groupEmail, error=str(e)).model_dump()
+        return ProvisionResult(
+            status="unknown_error",
+            projectId=payload.projectId,
+            groupEmail=payload.groupEmail,
+            error=str(e),
+        ).model_dump()

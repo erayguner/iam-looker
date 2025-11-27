@@ -19,10 +19,12 @@ class JsonFormatter(logging.Formatter):
             base.update(record.extra)
         return json.dumps(base)
 
+
 def configure_logging() -> None:
     level = os.getenv("LOG_LEVEL", "INFO").upper()
     handler = logging.StreamHandler()
     handler.setFormatter(JsonFormatter())
     logging.basicConfig(level=level, handlers=[handler])
+
 
 configure_logging()

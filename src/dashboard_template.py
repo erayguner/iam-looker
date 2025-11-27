@@ -4,6 +4,7 @@ import re
 
 PLACEHOLDER_PATTERN = re.compile(r"{{([A-Z0-9_]+)}}")
 
+
 class DashboardTemplateProcessor:
     """Applies token substitution to dashboard text fields."""
 
@@ -14,6 +15,7 @@ class DashboardTemplateProcessor:
         def _replace(match):
             key = match.group(1)
             return self.tokens.get(key, match.group(0))
+
         return PLACEHOLDER_PATTERN.sub(_replace, text)
 
     def apply_to_dashboard(self, dashboard: dict) -> dict:

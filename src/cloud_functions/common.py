@@ -9,6 +9,7 @@ logger = logging.getLogger("cloud_functions.common")
 
 PUBSUB_DATA_KEY = "data"
 
+
 def decode_pubsub(event: dict[str, Any]) -> dict[str, Any]:
     if PUBSUB_DATA_KEY in event:
         raw = event[PUBSUB_DATA_KEY]
@@ -19,4 +20,3 @@ def decode_pubsub(event: dict[str, Any]) -> dict[str, Any]:
             logger.warning("pubsub.decode_failed", extra={"error": str(e)})
             return {}
     return event
-

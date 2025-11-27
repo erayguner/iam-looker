@@ -4,6 +4,7 @@ from pydantic import BaseModel, EmailStr, Field, PositiveInt, field_validator
 
 PROJECT_ID_REGEX = re.compile(r"^[a-z][a-z0-9-]{4,61}[a-z0-9]$")
 
+
 class ProvisionPayload(BaseModel):
     projectId: str = Field(...)
     groupEmail: EmailStr
@@ -17,6 +18,7 @@ class ProvisionPayload(BaseModel):
         if not PROJECT_ID_REGEX.match(v):
             raise ValueError("Invalid projectId format")
         return v
+
 
 class ProvisionResult(BaseModel):
     status: str
