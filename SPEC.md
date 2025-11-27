@@ -2,7 +2,7 @@
 
 Version: 0.1.1
 Status: Draft
-Owner: Data Platform Engineering
+Owner: platform engineering
 Last Updated: 2025-11-15
 
 ## 1. Purpose

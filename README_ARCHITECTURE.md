@@ -71,7 +71,7 @@ Minimal API calls; can batch dashboard operations later.
 
 Version: 0.1.0
 Status: Draft
-Owner: Data Platform Engineering
+Owner: platform engineering
 Last Updated: 2025-11-15
 
 ## 1. Purpose
