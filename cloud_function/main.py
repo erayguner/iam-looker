@@ -2,6 +2,7 @@
 """Cloud Function entrypoint for Looker provisioning (2025 structure)."""
 
 import json
+
 from iam_looker.handler import handle_event
 
 # Entry point for Cloud Functions

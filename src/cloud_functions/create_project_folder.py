@@ -1,13 +1,16 @@
 from __future__ import annotations
-from typing import Any, Dict
+
+from typing import Any
+
+from iam_looker.exceptions import ProvisioningError
 from iam_looker.handler import provisioner
 from iam_looker.models import ProvisionResult
-from iam_looker.exceptions import ProvisioningError
+
 from .common import decode_pubsub
 
 # Single responsibility: create or reuse a project folder.
 
-def create_project_folder(event: Dict[str, Any], context: Any = None) -> Dict[str, Any]:
+def create_project_folder(event: dict[str, Any], context: Any = None) -> dict[str, Any]:
     payload = decode_pubsub(event)
     project_id = payload.get("projectId", "")
     group_email = payload.get("groupEmail", "")

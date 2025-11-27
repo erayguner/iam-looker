@@ -1,11 +1,11 @@
 import json
-from typing import Any, Dict
+from typing import Any
 
-from iam_looker.provisioner import LookerProvisioner
 from iam_looker.exceptions import ProvisioningError, ValidationError
-from iam_looker.models import ProvisionResult, ProvisionPayload
-from iam_looker.settings import settings
 from iam_looker.handler import provisioner as shared_provisioner
+from iam_looker.models import ProvisionPayload, ProvisionResult
+from iam_looker.provisioner import LookerProvisioner
+from iam_looker.settings import settings
 
 try:
     import looker_sdk
@@ -17,7 +17,7 @@ provisioner = shared_provisioner or (LookerProvisioner(_sdk) if _sdk else None)
 
 # Single-task functions
 
-def add_group_to_saml(event: Dict[str, Any], context: Any = None):
+def add_group_to_saml(event: dict[str, Any], context: Any = None):
     group_email = event.get("groupEmail") or ""
     if not provisioner:
         return {"status": "sdk_unavailable", "groupEmail": group_email}
@@ -29,7 +29,7 @@ def add_group_to_saml(event: Dict[str, Any], context: Any = None):
         return ProvisionResult(status="error", projectId="", groupEmail=group_email, error=str(e)).model_dump()
 
 
-def create_project_folder(event: Dict[str, Any], context: Any = None):
+def create_project_folder(event: dict[str, Any], context: Any = None):
     project_id = event.get("projectId") or ""
     group_email = event.get("groupEmail") or ""
     if not provisioner:
@@ -41,7 +41,7 @@ def create_project_folder(event: Dict[str, Any], context: Any = None):
         return ProvisionResult(status="error", projectId=project_id, groupEmail=group_email, error=str(e)).model_dump()
 
 
-def create_dashboard_from_template(event: Dict[str, Any], context: Any = None):
+def create_dashboard_from_template(event: dict[str, Any], context: Any = None):
     project_id = event.get("projectId") or ""
     group_email = event.get("groupEmail") or ""
     template_id = event.get("templateDashboardId")
@@ -55,7 +55,7 @@ def create_dashboard_from_template(event: Dict[str, Any], context: Any = None):
         return ProvisionResult(status="error", projectId=project_id, groupEmail=group_email, error=str(e)).model_dump()
 
 
-def provision_looker_project(event: Dict[str, Any], context: Any = None):
+def provision_looker_project(event: dict[str, Any], context: Any = None):
     if not provisioner:
         return {"status": "sdk_unavailable"}
     try:

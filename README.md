@@ -109,26 +109,89 @@ Cloud Functions / Cloud Run uses its attached service account (no key) and Appli
 - Permanent errors escalate to dead-letter / alerting.
 
 ## Local Development
-1. Install Python (>=3.10).
-2. Create & populate `.env` or export credentials:
+
+### Prerequisites
+- Python 3.12 or higher
+- Terraform 1.10.3 or higher (for infrastructure)
+- Make (optional, for convenience commands)
+
+### Quick Start
+
+1. **Install Python dependencies:**
+```bash
+# Install production dependencies
+pip install -r requirements.txt
+
+# Install development dependencies (recommended)
+make install-dev
+# Or: pip install -e ".[dev]"
 ```
+
+2. **Set up pre-commit hooks (recommended):**
+```bash
+pre-commit install
+```
+
+3. **Configure environment:**
+Create & populate `.env` or export credentials:
+```bash
 export LOOKERSDK_BASE_URL="https://your.looker.instance:19999"
 export LOOKERSDK_CLIENT_ID="client_id"
 export LOOKERSDK_CLIENT_SECRET="client_secret"
 export LOOKERSDK_VERIFY_SSL=true
 ```
 (These are Looker API credentials – distinct from GCP identity. Never commit real secrets.)
-3. Install deps:
+
+4. **Run tests:**
+```bash
+make test
+# Or: pytest -v
 ```
-pip install -r requirements.txt
+
+5. **Run linters and checks:**
+```bash
+# Run all checks (linting, formatting, type-checking, security)
+make check
+
+# Auto-fix linting issues
+make lint-fix
+
+# Format code
+make format
 ```
-4. Run tests:
-```
-pytest -q
-```
-5. Simulate event:
-```
+
+6. **Simulate event:**
+```bash
 python cloud_function/main.py '{"projectId":"demo","groupEmail":"demo-group@company.com"}'
+```
+
+### Development Tools (2025 Best Practices)
+
+This project uses modern Python tooling:
+
+- **Ruff**: Fast linter and formatter (replaces black, isort, flake8)
+- **MyPy**: Static type checking
+- **Bandit**: Security vulnerability scanning
+- **Pytest**: Testing framework
+- **Pre-commit**: Automated code quality checks
+- **Checkov**: Infrastructure security scanning
+
+See [DEVELOPMENT.md](DEVELOPMENT.md) for detailed development guide.
+
+### Common Commands
+
+```bash
+make help              # Show all available commands
+make install-dev       # Install development dependencies
+make test              # Run tests
+make lint              # Run linter
+make lint-fix          # Auto-fix linting issues
+make format            # Format code
+make security          # Run security checks
+make type-check        # Run type checking
+make check             # Run all checks
+make clean             # Clean cache files
+make ci                # Run CI checks locally
 ```
 
 ## Deployment (GCP Cloud Functions Gen2 example)

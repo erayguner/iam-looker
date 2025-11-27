@@ -58,3 +58,9 @@ variable "looker_client_secret" {
   type        = string
   description = "Client Secret (prefer Secret Manager, variable only for legacy)"
 }
+
+variable "kms_key_name" {
+  type        = string
+  description = "Customer-managed encryption key for PubSub topics (optional, recommended for production)"
+  default     = null
+}

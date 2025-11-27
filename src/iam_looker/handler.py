@@ -1,10 +1,12 @@
-import base64, json
-from typing import Any, Dict
-from .models import ProvisionPayload, ProvisionResult
-from .settings import settings
-from .exceptions import ProvisioningError, ValidationError
-from .provisioner import LookerProvisioner
+import base64
+import json
 import logging
+from typing import Any
+
+from .exceptions import ProvisioningError, ValidationError
+from .models import ProvisionPayload, ProvisionResult
+from .provisioner import LookerProvisioner
+from .settings import settings
 
 logger = logging.getLogger("iam_looker.handler")
 
@@ -17,7 +19,7 @@ except Exception:
 provisioner = LookerProvisioner(_sdk) if _sdk else None
 PUBSUB_DATA_KEY = "data"
 
-def _decode_pubsub(event: Dict[str, Any]) -> Dict[str, Any]:
+def _decode_pubsub(event: dict[str, Any]) -> dict[str, Any]:
     if PUBSUB_DATA_KEY in event:
         raw = event[PUBSUB_DATA_KEY]
         try:
@@ -28,7 +30,7 @@ def _decode_pubsub(event: Dict[str, Any]) -> Dict[str, Any]:
     return event
 
 
-def handle_event(event: Dict[str, Any], context: Any = None) -> Dict[str, Any]:
+def handle_event(event: dict[str, Any], context: Any = None) -> dict[str, Any]:
     payload_dict = _decode_pubsub(event)
     try:
         payload = ProvisionPayload(**payload_dict)

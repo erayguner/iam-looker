@@ -1,11 +1,13 @@
 from __future__ import annotations
-from typing import Any, Dict
+
+from typing import Any
+
+from ..exceptions import ProvisioningError
 from ..handler import provisioner
 from ..models import ProvisionResult
-from ..exceptions import ProvisioningError
 
 
-def add_group_to_saml(event: Dict[str, Any], context: Any = None) -> Dict[str, Any]:
+def add_group_to_saml(event: dict[str, Any], context: Any = None) -> dict[str, Any]:
     group_email = event.get("groupEmail", "")
     project_id = event.get("projectId", "")
     if provisioner is None:

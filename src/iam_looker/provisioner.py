@@ -1,6 +1,6 @@
-import uuid
 import logging
-from typing import List, Optional, Dict
+import uuid
+
 from .exceptions import ProvisioningError, ValidationError
 
 logger = logging.getLogger("iam_looker.provisioner")
@@ -46,7 +46,7 @@ class LookerProvisioner:
         logger.info("Created folder", extra={"event": "folder.create", "folderId": fid})
         return int(fid)
 
-    def clone_dashboard_if_missing(self, template_dashboard_id: int, target_folder_id: int, project_id: str) -> Optional[int]:
+    def clone_dashboard_if_missing(self, template_dashboard_id: int, target_folder_id: int, project_id: str) -> int | None:
         try:
             template = self.sdk.dashboard(template_dashboard_id)
         except Exception as e:
@@ -88,7 +88,7 @@ class LookerProvisioner:
             raise ProvisioningError(f"update_saml_config failed: {e}")
         logger.info("Added SAML group", extra={"event": "saml.group.add", "groupEmail": group_email})
 
-    def provision(self, project_id: str, group_email: str, template_dashboard_ids: List[int]) -> Dict:
+    def provision(self, project_id: str, group_email: str, template_dashboard_ids: list[int]) -> dict:
         if not project_id or not group_email:
             raise ValidationError("Missing project_id or group_email")
         correlation_id = str(uuid.uuid4())
@@ -96,7 +96,7 @@ class LookerProvisioner:
         group_id = self.ensure_group(group_email)
         self.ensure_saml_group_mapping(group_id, group_email)
         folder_id = self.ensure_project_folder(project_id)
-        cloned_ids: List[int] = []
+        cloned_ids: list[int] = []
         for dash_id in template_dashboard_ids:
             cloned = self.clone_dashboard_if_missing(dash_id, folder_id, project_id)
             if cloned:

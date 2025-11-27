@@ -1,5 +1,8 @@
-import json, sys
+import json
+import sys
+
 from .handler import handle_event
+
 
 def main():
     raw = sys.argv[1] if len(sys.argv) > 1 else '{}'
@@ -16,5 +19,4 @@ if __name__ == "__main__":
 """iam_looker package: provisioning automation for Looker.
 Exposes high-level handler entrypoints for Cloud Functions / Cloud Run.
 """
-from .handler import handle_event  # convenience re-export
 

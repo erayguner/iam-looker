@@ -1,4 +1,3 @@
-from typing import Dict, List
 import re
 
 # DEPRECATION: Will move into iam_looker.templates module in future release.
@@ -8,7 +7,7 @@ PLACEHOLDER_PATTERN = re.compile(r"{{([A-Z0-9_]+)}}")
 class DashboardTemplateProcessor:
     """Applies token substitution to dashboard text fields."""
 
-    def __init__(self, tokens: Dict[str, str]):
+    def __init__(self, tokens: dict[str, str]):
         self.tokens = tokens
 
     def substitute(self, text: str) -> str:
