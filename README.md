@@ -267,6 +267,42 @@ API Gateway attached to VPC network (`vpc_network`) for internal-only access.
 - Replace dashboard title uniqueness with metadata tagging.
 - Terraform module to manage Looker-related IAM (no keys).
 
+## Security
+
+This project implements comprehensive security measures following industry best practices:
+
+### 🔒 Security Features
+
+- **Secret Management:** Google Secret Manager integration, no hardcoded credentials
+- **Authentication:** Workload Identity Federation (WIF), zero long-lived keys
+- **Encryption:** Optional CMEK for Pub/Sub topics, TLS everywhere
+- **Network Security:** VPC integration, internal-only endpoints
+- **Input Validation:** Pydantic models with strict type checking
+- **Code Security:** Multiple automated security scanners
+
+### 🛡️ Automated Security Scanning
+
+**CI/CD Security:**
+- Secret scanning (Gitleaks, TruffleHog, detect-secrets)
+- Code security (Banban, Semgrep, CodeQL)
+- Dependency vulnerabilities (pip-audit, Safety)
+- Infrastructure security (Checkov, Trivy)
+- Daily and weekly automated scans
+
+**Local Security Checks:**
+```bash
+make security       # Run Bandit
+make security-all   # Run all security scanners
+make secrets-scan   # Scan for secrets
+```
+
+See [SECURITY.md](SECURITY.md) for security policy and vulnerability reporting.
+
+### 📊 Security Badges
+
+[![Security Scan](https://img.shields.io/badge/security-scan-brightgreen)](https://github.com/erayguner/iam-looker/actions)
+[![Dependabot](https://img.shields.io/badge/dependabot-enabled-blue)](https://github.com/erayguner/iam-looker/network/updates)
+
 ## 2025 Python Best Practices Adopted
 1. src/ layout with explicit package (`iam_looker`).
 2. Pydantic models for input validation & settings management.
@@ -275,6 +311,9 @@ API Gateway attached to VPC network (`vpc_network`) for internal-only access.
 5. Immutable result dataclasses replaced by pydantic models for consistent serialisation.
 6. Dependency pinning (major versions) and pyproject classifiers for ecosystem clarity.
 7. Backward compatibility layer (legacy modules) scheduled for deprecation.
+8. Comprehensive security scanning and automated dependency updates.
+9. Modern linting with Ruff (replaces black, isort, flake8).
+10. Strict type checking with MyPy and pre-commit hooks.
 
 ## Secret Management
 Sensitive values (Looker client id/secret) are injected via Cloud Functions `secret_environment_variables` referencing Secret Manager secrets (`looker-client-id`, `looker-client-secret`). Do not place them in `terraform.tfvars`. The only recommended tfvars are `project_id`, `project_number`, `region`, and possibly deployment artifact settings (bucket/object) which are not secrets.

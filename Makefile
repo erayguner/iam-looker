@@ -32,6 +32,24 @@ format-check: ## Check code formatting without changes
 security: ## Run security checks with bandit
 	bandit -r src/ -c pyproject.toml
 
+security-all: ## Run all security scanners (bandit, pip-audit, gitleaks)
+	@echo "Running comprehensive security scan..."
+	@echo "\n==> Bandit (Python code security)"
+	bandit -r src/ -c pyproject.toml || true
+	@echo "\n==> pip-audit (dependency vulnerabilities)"
+	pip-audit --requirement requirements.txt || true
+	@echo "\n==> Gitleaks (secret detection)"
+	docker run --rm -v $(PWD):/path zricethezav/gitleaks:latest detect --source="/path" -v || true
+	@echo "\nSecurity scan complete!"
+
+secrets-scan: ## Scan for secrets using gitleaks
+	@command -v gitleaks >/dev/null 2>&1 || { \
+		echo "Gitleaks not found. Installing..."; \
+		echo "Run: brew install gitleaks (macOS) or download from https://github.com/gitleaks/gitleaks/releases"; \
+		exit 1; \
+	}
+	gitleaks detect --source . -v
+
 type-check: ## Run static type checking with mypy
 	mypy src/
 
@@ -66,5 +84,7 @@ terraform-checkov: ## Run Checkov security scan on Terraform
 
 # Combined commands
 ci: check test ## Run CI checks (all checks + tests)
+
+ci-security: check test security-all ## Run CI with comprehensive security scans
 
 all: install-dev check test ## Install, check, and test everything
