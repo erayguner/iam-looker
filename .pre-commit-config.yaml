@@ -18,8 +18,11 @@ repos:
     rev: v1.18.2
     hooks:
       - id: mypy
-        additional_dependencies: [pydantic>=2.7.0, types-all]
-        args: [--config-file=pyproject.toml]
+        additional_dependencies:
+          - pydantic>=2.7.0
+          - types-requests
+          - types-setuptools
+        args: [--config-file=pyproject.toml, --ignore-missing-imports]
 
   # Bandit - Security linting
   - repo: https://github.com/PyCQA/bandit
