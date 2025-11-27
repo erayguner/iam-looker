@@ -48,13 +48,24 @@ select = [
     "RUF",   # Ruff-specific rules
 ]
 ignore = [
-    "S101",  # Allow assert statements in tests
-    "T201",  # Allow print statements (can be removed for production)
+    "S101",   # Allow assert statements in tests
+    "T201",   # Allow print statements (can be removed for production)
+    "ARG001", # Allow unused function arguments (Cloud Functions context)
+    "ARG002", # Allow unused method arguments
+    "B904",   # Allow raise without from (legacy code)
+    "E501",   # Allow lines over 100 characters (will fix gradually)
+    "RUF005", # Allow list concatenation (more readable than unpacking)
+    "N805",   # Allow cls in Pydantic validators
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**/*.py" = ["S101", "ARG001", "ARG002"]
+"tests/**/*.py" = ["S101", "ARG001", "ARG002", "B011", "PTH118", "PTH120"]
 "__init__.py" = ["F401"]
+"src/iam_looker/models.py" = ["N815"]  # Allow mixedCase for Pydantic models (JSON serialization)
+"src/config.py" = ["SIM105"]  # Allow try-except-pass pattern
+"functions/*.py" = ["ARG001"]  # Cloud Functions require context parameter
+"src/cloud_functions/*.py" = ["ARG001"]  # Cloud Functions require context parameter
+"src/iam_looker/functions/*.py" = ["ARG001"]  # Cloud Functions require context parameter
 
 [tool.ruff.format]
 quote-style = "double"
