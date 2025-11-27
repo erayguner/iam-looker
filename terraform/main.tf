@@ -1,25 +1,25 @@
 module "wif_github" {
-  source = "./modules/wif_github"
-  project_id             = var.project_id
-  project_number         = var.project_number
-  pool_id                = var.pool_id
-  provider_id            = var.provider_id
-  repository             = var.repository
-  ci_service_account_id  = var.ci_service_account_id
+  source                = "./modules/wif_github"
+  project_id            = var.project_id
+  project_number        = var.project_number
+  pool_id               = var.pool_id
+  provider_id           = var.provider_id
+  repository            = var.repository
+  ci_service_account_id = var.ci_service_account_id
 }
 
 # Package Python source
 data "archive_file" "function_zip" {
   type        = "zip"
-  source_dir  = "${path.root}"
+  source_dir  = path.root
   excludes    = [".git", "terraform", "tests", "*.tfstate", "*.tfstate.backup", "__pycache__"]
   output_path = "${path.root}/build/function_source.zip"
 }
 
 resource "google_storage_bucket_object" "function_source" {
-  name        = "function-source-${data.archive_file.function_zip.output_md5}.zip"
-  bucket      = var.source_bucket
-  source      = data.archive_file.function_zip.output_path
+  name         = "function-source-${data.archive_file.function_zip.output_md5}.zip"
+  bucket       = var.source_bucket
+  source       = data.archive_file.function_zip.output_path
   content_type = "application/zip"
 }
 
@@ -32,14 +32,15 @@ locals {
 }
 
 resource "google_api_gateway_api" "looker_api" {
-  api_id      = "looker-automation"
-  project      = var.project_id
-  display_name = "Looker Automation API"
+  provider = google-beta
+  api_id   = "looker-automation"
+  project  = var.project_id
 }
 
 resource "google_api_gateway_api_config" "looker_api_cfg" {
-  api          = google_api_gateway_api.looker_api.api_id
-  project      = var.project_id
+  provider      = google-beta
+  api           = google_api_gateway_api.looker_api.api_id
+  project       = var.project_id
   api_config_id = "v1"
 
   openapi_documents {
@@ -57,12 +58,9 @@ resource "google_api_gateway_api_config" "looker_api_cfg" {
 }
 
 resource "google_api_gateway_gateway" "looker_gw" {
+  provider   = google-beta
   project    = var.project_id
   api_config = google_api_gateway_api_config.looker_api_cfg.id
   gateway_id = "looker-gw"
-  location   = var.region
-
-  gateway_config {
-    network = var.vpc_network
-  }
+  region     = var.region
 }
