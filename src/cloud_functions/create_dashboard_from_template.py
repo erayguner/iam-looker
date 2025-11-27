@@ -1,14 +1,18 @@
 from __future__ import annotations
 from typing import Any, Dict
-from ..handler import provisioner
-from ..models import ProvisionResult
-from ..exceptions import ProvisioningError
+from iam_looker.handler import provisioner
+from iam_looker.models import ProvisionResult
+from iam_looker.exceptions import ProvisioningError
+from .common import decode_pubsub
+
+# Single responsibility: clone a dashboard template into a project-specific folder.
 
 def create_dashboard_from_template(event: Dict[str, Any], context: Any = None) -> Dict[str, Any]:
-    template_id = int(event.get("templateDashboardId", 0))
-    folder_id = int(event.get("folderId", 0))
-    project_id = event.get("projectId", "")
-    group_email = event.get("groupEmail", "")
+    payload = decode_pubsub(event)
+    template_id = int(payload.get("templateDashboardId", 0))
+    folder_id = int(payload.get("folderId", 0))
+    project_id = payload.get("projectId", "")
+    group_email = payload.get("groupEmail", "")
     if provisioner is None:
         return ProvisionResult(status="sdk_unavailable", projectId=project_id, groupEmail=group_email).model_dump()
     try:
@@ -16,3 +20,4 @@ def create_dashboard_from_template(event: Dict[str, Any], context: Any = None) -
         return ProvisionResult(status="ok", projectId=project_id, groupEmail=group_email, dashboardIds=[did]).model_dump()
     except ProvisioningError as e:
         return ProvisionResult(status="error", projectId=project_id, groupEmail=group_email, error=str(e)).model_dump()
+

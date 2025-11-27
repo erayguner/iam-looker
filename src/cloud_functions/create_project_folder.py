@@ -1,13 +1,16 @@
 from __future__ import annotations
 from typing import Any, Dict
-from ..handler import provisioner
-from ..models import ProvisionResult
-from ..exceptions import ProvisioningError
+from iam_looker.handler import provisioner
+from iam_looker.models import ProvisionResult
+from iam_looker.exceptions import ProvisioningError
+from .common import decode_pubsub
 
+# Single responsibility: create or reuse a project folder.
 
 def create_project_folder(event: Dict[str, Any], context: Any = None) -> Dict[str, Any]:
-    project_id = event.get("projectId", "")
-    group_email = event.get("groupEmail", "")
+    payload = decode_pubsub(event)
+    project_id = payload.get("projectId", "")
+    group_email = payload.get("groupEmail", "")
     if provisioner is None:
         return ProvisionResult(status="sdk_unavailable", projectId=project_id, groupEmail=group_email).model_dump()
     try:
@@ -15,3 +18,4 @@ def create_project_folder(event: Dict[str, Any], context: Any = None) -> Dict[st
         return ProvisionResult(status="ok", projectId=project_id, groupEmail=group_email, folderId=fid).model_dump()
     except ProvisioningError as e:
         return ProvisionResult(status="error", projectId=project_id, groupEmail=group_email, error=str(e)).model_dump()
+
