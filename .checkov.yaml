@@ -1,0 +1,27 @@
+# Checkov configuration for iam-looker
+# Suppress false positives and document security decisions
+
+# Skip checks that are false positives or not applicable
+skip-check:
+  # CKV_SECRET_6: Base64 High Entropy String
+  # False positive - these are not secrets but base64-encoded function configurations
+  - CKV_SECRET_6
+
+  # CKV_OPENAPI_4: Global security field rules
+  # Not applicable - API Gateway uses IAM authentication at infrastructure level
+  - CKV_OPENAPI_4
+
+  # CKV_OPENAPI_5: Security operations not empty
+  # Not applicable - Security handled by VPC and IAM, not in OpenAPI spec
+  - CKV_OPENAPI_5
+
+# Framework to scan
+framework:
+  - terraform
+
+# Soft fail mode (don't fail build on findings)
+soft-fail: false
+
+# Output configuration
+compact: true
+quiet: false

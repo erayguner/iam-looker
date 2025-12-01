@@ -88,6 +88,13 @@ check_untyped_defs = true
 strict_equality = true
 ignore_missing_imports = true
 
+# Exclude duplicate main modules and legacy code
+exclude = [
+    "^cloud_function/",
+    "^functions/",
+    "^scripts/",
+]
+
 # Bandit configuration - Security linting
 [tool.bandit]
 exclude_dirs = ["tests", "venv", ".venv"]

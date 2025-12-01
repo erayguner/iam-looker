@@ -30,4 +30,3 @@ module "wif_github" {
 ## Notes
 - No service account key resource is created.
 - Attribute condition restricts usage to the specified repository.
-

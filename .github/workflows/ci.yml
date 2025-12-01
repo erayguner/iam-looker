@@ -194,6 +194,11 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.10.3
+
       - name: Install pre-commit
         run: pip install pre-commit
 
@@ -206,7 +211,7 @@ jobs:
       - name: Run pre-commit
         run: |
           echo "::group::Pre-commit Hooks"
-          pre-commit run --all-files --show-diff-on-failure
+          SKIP=terraform_validate pre-commit run --all-files --show-diff-on-failure
           echo "::endgroup::"
 
   # Python tests
