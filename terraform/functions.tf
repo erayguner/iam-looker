@@ -1,13 +1,34 @@
 resource "google_pubsub_topic" "add_group_topic" {
-  name = "looker-add-group"
+  name    = "looker-add-group"
+  project = var.project_id
+
+  # Enable customer-managed encryption keys (CMEK) for enhanced security
+  # Checkov: CKV_GCP_83
+  kms_key_name = var.kms_key_name
+
+  message_retention_duration = "86400s" # 1 day
 }
 
 resource "google_pubsub_topic" "create_folder_topic" {
-  name = "looker-create-folder"
+  name    = "looker-create-folder"
+  project = var.project_id
+
+  # Enable customer-managed encryption keys (CMEK) for enhanced security
+  # Checkov: CKV_GCP_83
+  kms_key_name = var.kms_key_name
+
+  message_retention_duration = "86400s" # 1 day
 }
 
 resource "google_pubsub_topic" "create_dashboard_topic" {
-  name = "looker-create-dashboard"
+  name    = "looker-create-dashboard"
+  project = var.project_id
+
+  # Enable customer-managed encryption keys (CMEK) for enhanced security
+  # Checkov: CKV_GCP_83
+  kms_key_name = var.kms_key_name
+
+  message_retention_duration = "86400s" # 1 day
 }
 
 resource "google_cloudfunctions2_function" "add_group" {

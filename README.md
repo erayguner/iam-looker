@@ -109,26 +109,89 @@ Cloud Functions / Cloud Run uses its attached service account (no key) and Appli
 - Permanent errors escalate to dead-letter / alerting.
 
 ## Local Development
-1. Install Python (>=3.10).
-2. Create & populate `.env` or export credentials:
+
+### Prerequisites
+- Python 3.12 or higher
+- Terraform 1.10.3 or higher (for infrastructure)
+- Make (optional, for convenience commands)
+
+### Quick Start
+
+1. **Install Python dependencies:**
+```bash
+# Install production dependencies
+pip install -r requirements.txt
+
+# Install development dependencies (recommended)
+make install-dev
+# Or: pip install -e ".[dev]"
 ```
+
+2. **Set up pre-commit hooks (recommended):**
+```bash
+pre-commit install
+```
+
+3. **Configure environment:**
+Create & populate `.env` or export credentials:
+```bash
 export LOOKERSDK_BASE_URL="https://your.looker.instance:19999"
 export LOOKERSDK_CLIENT_ID="client_id"
 export LOOKERSDK_CLIENT_SECRET="client_secret"
 export LOOKERSDK_VERIFY_SSL=true
 ```
 (These are Looker API credentials – distinct from GCP identity. Never commit real secrets.)
-3. Install deps:
+
+4. **Run tests:**
+```bash
+make test
+# Or: pytest -v
 ```
-pip install -r requirements.txt
+
+5. **Run linters and checks:**
+```bash
+# Run all checks (linting, formatting, type-checking, security)
+make check
+
+# Auto-fix linting issues
+make lint-fix
+
+# Format code
+make format
 ```
-4. Run tests:
-```
-pytest -q
-```
-5. Simulate event:
-```
+
+6. **Simulate event:**
+```bash
 python cloud_function/main.py '{"projectId":"demo","groupEmail":"demo-group@company.com"}'
+```
+
+### Development Tools (2025 Best Practices)
+
+This project uses modern Python tooling:
+
+- **Ruff**: Fast linter and formatter (replaces black, isort, flake8)
+- **MyPy**: Static type checking
+- **Bandit**: Security vulnerability scanning
+- **Pytest**: Testing framework
+- **Pre-commit**: Automated code quality checks
+- **Checkov**: Infrastructure security scanning
+
+See [DEVELOPMENT.md](DEVELOPMENT.md) for detailed development guide.
+
+### Common Commands
+
+```bash
+make help              # Show all available commands
+make install-dev       # Install development dependencies
+make test              # Run tests
+make lint              # Run linter
+make lint-fix          # Auto-fix linting issues
+make format            # Format code
+make security          # Run security checks
+make type-check        # Run type checking
+make check             # Run all checks
+make clean             # Clean cache files
+make ci                # Run CI checks locally
 ```
 
 ## Deployment (GCP Cloud Functions Gen2 example)
@@ -204,6 +267,42 @@ API Gateway attached to VPC network (`vpc_network`) for internal-only access.
 - Replace dashboard title uniqueness with metadata tagging.
 - Terraform module to manage Looker-related IAM (no keys).
 
+## Security
+
+This project implements comprehensive security measures following industry best practices:
+
+### 🔒 Security Features
+
+- **Secret Management:** Google Secret Manager integration, no hardcoded credentials
+- **Authentication:** Workload Identity Federation (WIF), zero long-lived keys
+- **Encryption:** Optional CMEK for Pub/Sub topics, TLS everywhere
+- **Network Security:** VPC integration, internal-only endpoints
+- **Input Validation:** Pydantic models with strict type checking
+- **Code Security:** Multiple automated security scanners
+
+### 🛡️ Automated Security Scanning
+
+**CI/CD Security:**
+- Secret scanning (Gitleaks, TruffleHog, detect-secrets)
+- Code security (Banban, Semgrep, CodeQL)
+- Dependency vulnerabilities (pip-audit, Safety)
+- Infrastructure security (Checkov, Trivy)
+- Daily and weekly automated scans
+
+**Local Security Checks:**
+```bash
+make security       # Run Bandit
+make security-all   # Run all security scanners
+make secrets-scan   # Scan for secrets
+```
+
+See [SECURITY.md](SECURITY.md) for security policy and vulnerability reporting.
+
+### 📊 Security Badges
+
+[![Security Scan](https://img.shields.io/badge/security-scan-brightgreen)](https://github.com/erayguner/iam-looker/actions)
+[![Dependabot](https://img.shields.io/badge/dependabot-enabled-blue)](https://github.com/erayguner/iam-looker/network/updates)
+
 ## 2025 Python Best Practices Adopted
 1. src/ layout with explicit package (`iam_looker`).
 2. Pydantic models for input validation & settings management.
@@ -212,6 +311,9 @@ API Gateway attached to VPC network (`vpc_network`) for internal-only access.
 5. Immutable result dataclasses replaced by pydantic models for consistent serialisation.
 6. Dependency pinning (major versions) and pyproject classifiers for ecosystem clarity.
 7. Backward compatibility layer (legacy modules) scheduled for deprecation.
+8. Comprehensive security scanning and automated dependency updates.
+9. Modern linting with Ruff (replaces black, isort, flake8).
+10. Strict type checking with MyPy and pre-commit hooks.
 
 ## Secret Management
 Sensitive values (Looker client id/secret) are injected via Cloud Functions `secret_environment_variables` referencing Secret Manager secrets (`looker-client-id`, `looker-client-secret`). Do not place them in `terraform.tfvars`. The only recommended tfvars are `project_id`, `project_number`, `region`, and possibly deployment artifact settings (bucket/object) which are not secrets.

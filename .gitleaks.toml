@@ -1,0 +1,72 @@
+# Gitleaks configuration for iam-looker
+# See https://github.com/gitleaks/gitleaks for more info
+
+title = "iam-looker Gitleaks Configuration"
+
+[extend]
+# Use default gitleaks rules
+useDefault = true
+
+# Custom rules for this project
+[[rules]]
+id = "looker-api-credentials"
+description = "Looker API credentials"
+regex = '''(?i)(looker[_-]?(?:client[_-]?(?:id|secret)|api[_-]?key))\s*[:=]\s*['"]?([a-zA-Z0-9]{20,})'''
+tags = ["looker", "api", "secret"]
+
+[[rules]]
+id = "gcp-service-account-key"
+description = "Google Cloud Service Account Key (JSON)"
+regex = '''"type"\s*:\s*"service_account"'''
+tags = ["gcp", "service-account", "key"]
+
+[[rules]]
+id = "terraform-variables"
+description = "Terraform variables that might contain secrets"
+regex = '''(?i)(client_secret|api_key|password|token)\s*=\s*['"]([^'"]+)['"]'''
+path = '''\.tfvars$'''
+tags = ["terraform", "secret"]
+
+[[rules]]
+id = "env-file-secrets"
+description = "Secrets in .env files"
+regex = '''(?i)(secret|password|token|key|credential)\s*=\s*['"]?([^'"\s]{8,})'''
+path = '''\.env'''
+tags = ["env", "secret"]
+
+# Allowlists
+[allowlist]
+description = "Allowlisted patterns and files"
+paths = [
+    # Allow example files
+    '''\.env\.example$''',
+    '''\.env\.template$''',
+    # Allow documentation
+    '''\.md$''',
+    # Allow test fixtures
+    '''tests/fixtures/''',
+    # Allow terraform examples
+    '''examples/'''
+]
+
+regexes = [
+    # Allow placeholder values
+    '''your-[a-z-]+''',
+    '''example\.com''',
+    '''demo-[a-z-]+''',
+    '''test-[a-z-]+''',
+    '''placeholder''',
+    # Allow common non-secrets
+    '''client_id.*example''',
+    '''secret.*REDACTED'''
+]
+
+# Stopwords - patterns to ignore
+stopwords = [
+    "example",
+    "placeholder",
+    "your-value-here",
+    "REDACTED",
+    "xxx",
+    "***"
+]

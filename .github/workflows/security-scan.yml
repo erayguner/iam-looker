@@ -1,0 +1,108 @@
+name: Weekly Security Scan
+
+on:
+  schedule:
+    # Run every Monday at 9:00 AM UTC
+    - cron: '0 9 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+  issues: write
+
+jobs:
+  comprehensive-security-scan:
+    name: Comprehensive Security Audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install security tools
+        run: |
+          pip install --upgrade pip
+          pip install bandit checkov pip-audit safety
+
+      - name: Run Bandit (Python security)
+        run: |
+          echo "::group::Bandit Security Scan"
+          bandit -r src/ -f json -o bandit-weekly.json
+          bandit -r src/ -f screen
+          echo "::endgroup::"
+        continue-on-error: true
+
+      - name: Run Safety (dependency vulnerabilities)
+        run: |
+          echo "::group::Safety Vulnerability Check"
+          pip install -r requirements.txt
+          safety check --json --output safety-report.json || true
+          safety check || true
+          echo "::endgroup::"
+        continue-on-error: true
+
+      - name: Run pip-audit
+        run: |
+          echo "::group::Pip-audit Scan"
+          pip-audit --requirement requirements.txt --format json --output pip-audit-weekly.json || true
+          pip-audit --requirement requirements.txt || true
+          echo "::endgroup::"
+        continue-on-error: true
+
+      - name: Run Checkov (Terraform)
+        run: |
+          echo "::group::Checkov Terraform Scan"
+          checkov -d terraform/ --framework terraform --output cli --output json --output-file-path checkov-weekly || true
+          echo "::endgroup::"
+        continue-on-error: true
+
+      - name: Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+        continue-on-error: true
+
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-results.sarif'
+        continue-on-error: true
+
+      - name: Upload security reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: weekly-security-reports
+          path: |
+            bandit-weekly.json
+            safety-report.json
+            pip-audit-weekly.json
+            checkov-weekly/
+            trivy-results.sarif
+
+      - name: Create security summary
+        if: always()
+        run: |
+          echo "# Weekly Security Scan Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Scan Date:** $(date)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Scans Performed:" >> $GITHUB_STEP_SUMMARY
+          echo "- 🔍 Bandit (Python code security)" >> $GITHUB_STEP_SUMMARY
+          echo "- 🔍 Safety (Python dependency vulnerabilities)" >> $GITHUB_STEP_SUMMARY
+          echo "- 🔍 pip-audit (Dependency vulnerabilities)" >> $GITHUB_STEP_SUMMARY
+          echo "- 🔍 Checkov (Terraform security)" >> $GITHUB_STEP_SUMMARY
+          echo "- 🔍 Trivy (Comprehensive vulnerability scan)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "📊 Review detailed reports in workflow artifacts." >> $GITHUB_STEP_SUMMARY

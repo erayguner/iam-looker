@@ -1,8 +1,8 @@
 import os
 from dataclasses import dataclass
-from typing import List, Optional
 
 # DEPRECATION: Replace with iam_looker.settings.Settings in new code paths.
+
 
 @dataclass
 class AppConfig:
@@ -10,8 +10,8 @@ class AppConfig:
     client_id: str
     client_secret: str
     verify_ssl: bool = True
-    default_template_folder_id: Optional[int] = None
-    default_template_dashboard_ids: List[int] = None
+    default_template_folder_id: int | None = None
+    default_template_dashboard_ids: list[int] = None
 
     @staticmethod
     def load() -> "AppConfig":

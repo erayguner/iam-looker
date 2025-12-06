@@ -1,9 +1,11 @@
 import types
-import json
+
 # NOTE: Legacy test coverage; see test_handler.py for new handler tests.
 from src.looker_provisioner import LookerProvisioner, ValidationError
+
 from iam_looker.handler import handle_event
 from iam_looker.models import ProvisionPayload
+
 
 class MockSDK:
     def __init__(self):
@@ -17,7 +19,7 @@ class MockSDK:
         return [g for g in self.groups if g.name == name]
 
     def create_group(self, body):
-        g = types.SimpleNamespace(id=len(self.groups)+1, name=body["name"])
+        g = types.SimpleNamespace(id=len(self.groups) + 1, name=body["name"])
         self.groups.append(g)
         return g
 
@@ -26,7 +28,7 @@ class MockSDK:
         return [f for f in self.folders if f.name == name]
 
     def create_folder(self, body):
-        f = types.SimpleNamespace(id=len(self.folders)+1, name=body["name"])
+        f = types.SimpleNamespace(id=len(self.folders) + 1, name=body["name"])
         self.folders.append(f)
         return f
 
@@ -38,7 +40,9 @@ class MockSDK:
         return [d for d in self.dashboards if d.title == title]
 
     def dashboard_copy(self, dashboard_id, body):
-        d = types.SimpleNamespace(id=len(self.dashboards)+100, title=body["name"], folder_id=body["folder_id"])
+        d = types.SimpleNamespace(
+            id=len(self.dashboards) + 100, title=body["name"], folder_id=body["folder_id"]
+        )
         self.dashboards.append(d)
         return d
 
@@ -55,11 +59,21 @@ class MockSDK:
 def test_provision_happy_path():
     sdk = MockSDK()
     p = LookerProvisioner(sdk)
-    result = p.provision(project_id="demo-project", group_email="analysts@company.com", template_dashboard_ids=[1,2], template_folder_id=None)
+    result = p.provision(
+        project_id="demo-project",
+        group_email="analysts@company.com",
+        template_dashboard_ids=[1, 2],
+        template_folder_id=None,
+    )
     assert result["projectId"] == "demo-project"
     assert len(result["dashboardIds"]) == 2
     # second run should not duplicate dashboards
-    result2 = p.provision(project_id="demo-project", group_email="analysts@company.com", template_dashboard_ids=[1,2], template_folder_id=None)
+    result2 = p.provision(
+        project_id="demo-project",
+        group_email="analysts@company.com",
+        template_dashboard_ids=[1, 2],
+        template_folder_id=None,
+    )
     assert len(result2["dashboardIds"]) == 2  # reused
     assert sdk.dashboard_copy  # ensure method exists
 
@@ -68,7 +82,12 @@ def test_validation_error():
     sdk = MockSDK()
     p = LookerProvisioner(sdk)
     try:
-        p.provision(project_id="", group_email="no-at-sign", template_dashboard_ids=[], template_folder_id=None)
+        p.provision(
+            project_id="",
+            group_email="no-at-sign",
+            template_dashboard_ids=[],
+            template_folder_id=None,
+        )
     except ValidationError:
         assert True
     else:
@@ -78,18 +97,25 @@ def test_validation_error():
 def test_provision_happy_path_old():
     sdk = MockSDK()
     p = LookerProvisioner(sdk)
-    result = p.provision(project_id="demo-project", group_email="analysts@company.com", template_dashboard_ids=[1,2], template_folder_id=None)
+    result = p.provision(
+        project_id="demo-project",
+        group_email="analysts@company.com",
+        template_dashboard_ids=[1, 2],
+        template_folder_id=None,
+    )
     assert result["projectId"] == "demo-project"
     assert len(result["dashboardIds"]) == 2
-    result2 = p.provision(project_id="demo-project", group_email="analysts@company.com", template_dashboard_ids=[1,2], template_folder_id=None)
+    result2 = p.provision(
+        project_id="demo-project",
+        group_email="analysts@company.com",
+        template_dashboard_ids=[1, 2],
+        template_folder_id=None,
+    )
     assert len(result2["dashboardIds"]) == 2
 
 
 def test_pydantic_model_validation():
-    payload = {
-        "projectId": "demo-project",
-        "groupEmail": "analysts@company.com"
-    }
+    payload = {"projectId": "demo-project", "groupEmail": "analysts@company.com"}
     model = ProvisionPayload(**payload)
     assert model.projectId == "demo-project"
     assert model.groupEmail == "analysts@company.com"

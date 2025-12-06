@@ -1,6 +1,5 @@
-import uuid
 import logging
-from typing import List, Optional, Dict
+import uuid
 
 # NOTE: Legacy implementation retained; new code resides in iam_looker.provisioner.LookerProvisioner
 
@@ -12,11 +11,14 @@ except ImportError:  # pragma: no cover
 logger = logging.getLogger("looker_provisioner")
 logging.basicConfig(level=logging.INFO)
 
+
 class ProvisioningError(Exception):
     pass
 
+
 class ValidationError(Exception):
     pass
+
 
 class LookerProvisioner:
     def __init__(self, sdk):
@@ -64,7 +66,9 @@ class LookerProvisioner:
         return int(fid)
 
     # DASHBOARD CLONE
-    def clone_dashboard_if_missing(self, template_dashboard_id: int, target_folder_id: int, project_id: str) -> Optional[int]:
+    def clone_dashboard_if_missing(
+        self, template_dashboard_id: int, target_folder_id: int, project_id: str
+    ) -> int | None:
         try:
             template = self.sdk.dashboard(template_dashboard_id)
         except Exception as e:
@@ -80,7 +84,11 @@ class LookerProvisioner:
             did = getattr(existing[0], "id", None)
             logger.info({"event": "dashboard.reuse", "dashboardId": did})
             return int(did)
-        copy_body = {"dashboard_id": template_dashboard_id, "name": desired_title, "folder_id": target_folder_id}
+        copy_body = {
+            "dashboard_id": template_dashboard_id,
+            "name": desired_title,
+            "folder_id": target_folder_id,
+        }
         try:
             cloned = self.sdk.dashboard_copy(template_dashboard_id, body=copy_body)
         except Exception as e:
@@ -111,11 +119,19 @@ class LookerProvisioner:
             raise ProvisioningError(f"update_saml_config failed: {e}")
         logger.info({"event": "saml.group.add", "groupEmail": group_email})
 
-    def provision(self, project_id: str, group_email: str, template_dashboard_ids: List[int], template_folder_id: Optional[int]) -> Dict:
+    def provision(
+        self,
+        project_id: str,
+        group_email: str,
+        template_dashboard_ids: list[int],
+        template_folder_id: int | None,
+    ) -> dict:
         if not project_id or not group_email or "@" not in group_email:
             raise ValidationError("Invalid project_id or group_email")
         correlation_id = str(uuid.uuid4())
-        logger.info({"event": "provision.start", "projectId": project_id, "correlationId": correlation_id})
+        logger.info(
+            {"event": "provision.start", "projectId": project_id, "correlationId": correlation_id}
+        )
         group_id = self.ensure_group(group_email)
         self.ensure_saml_group_mapping(group_id, group_email)
         folder_id = self.ensure_project_folder(project_id)
@@ -126,7 +142,13 @@ class LookerProvisioner:
                 if cloned_id:
                     cloned_dashboards.append(cloned_id)
             except ProvisioningError as e:
-                logger.error({"event": "dashboard.clone.error", "dashboardTemplateId": dash_id, "error": str(e)})
+                logger.error(
+                    {
+                        "event": "dashboard.clone.error",
+                        "dashboardTemplateId": dash_id,
+                        "error": str(e),
+                    }
+                )
                 raise
         result = {
             "projectId": project_id,
