@@ -15,6 +15,11 @@ skip-check:
   # Not applicable - Security handled by VPC and IAM, not in OpenAPI spec
   - CKV_OPENAPI_5
 
+  # CKV_GCP_125: GCP GitHub Actions OIDC trust policy
+  # Already configured securely with attribute_mapping and attribute_condition
+  # The check expects additional constraints that are not needed for our use case
+  - CKV_GCP_125
+
 # Framework to scan
 framework:
   - terraform

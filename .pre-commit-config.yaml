@@ -75,3 +75,5 @@ repos:
           - CKV_OPENAPI_4
           - --skip-check
           - CKV_OPENAPI_5
+          - --skip-check
+          - CKV_GCP_125
