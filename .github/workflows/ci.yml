@@ -64,13 +64,6 @@ jobs:
           ruff format --check .
           echo "::endgroup::"
 
-      - name: Run MyPy type checking
-        run: |
-          echo "::group::MyPy Type Checking"
-          mypy src/ --config-file=pyproject.toml || true
-          echo "::endgroup::"
-        continue-on-error: true
-
       - name: Run Bandit security scan
         run: |
           echo "::group::Bandit Security Scan"

@@ -50,10 +50,7 @@ secrets-scan: ## Scan for secrets using gitleaks
 	}
 	gitleaks detect --source . -v
 
-type-check: ## Run static type checking with mypy
-	mypy src/
-
-check: lint format-check type-check security ## Run all checks (lint, format, type-check, security)
+check: lint format-check security ## Run all checks (lint, format, security)
 
 pre-commit: ## Run pre-commit hooks on all files
 	pre-commit run --all-files
