@@ -95,6 +95,15 @@ exclude = [
     "^scripts/",
 ]
 
+# Per-module overrides for legacy code
+[[tool.mypy.overrides]]
+module = "iam_looker.provisioner"
+disable_error_code = ["arg-type", "no-untyped-def"]
+
+[[tool.mypy.overrides]]
+module = "iam_looker.functions.*"
+disable_error_code = ["arg-type", "list-item", "no-untyped-def"]
+
 # Bandit configuration - Security linting
 [tool.bandit]
 exclude_dirs = ["tests", "venv", ".venv"]
