@@ -3,11 +3,6 @@ import uuid
 
 # NOTE: Legacy implementation retained; new code resides in iam_looker.provisioner.LookerProvisioner
 
-try:
-    import looker_sdk
-except ImportError:  # pragma: no cover
-    looker_sdk = None  # Allows tests without package installed yet.
-
 logger = logging.getLogger("looker_provisioner")
 logging.basicConfig(level=logging.INFO)
 
