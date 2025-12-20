@@ -14,7 +14,8 @@ class ProvisionPayload(BaseModel):
     tokens: dict[str, str] = Field(default_factory=dict)
 
     @field_validator("projectId")
-    def validate_project_id(self, v):
+    @classmethod
+    def validate_project_id(cls, v):
         if not PROJECT_ID_REGEX.match(v):
             raise ValueError("Invalid projectId format")
         return v
