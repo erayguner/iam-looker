@@ -1,13 +1,10 @@
 import types
 
-import pytest
+# NOTE: Legacy test coverage; see test_handler.py for new handler tests.
+from src.looker_provisioner import LookerProvisioner, ValidationError
 
-from iam_looker.exceptions import ValidationError
 from iam_looker.handler import handle_event
 from iam_looker.models import ProvisionPayload
-
-# NOTE: Legacy test coverage; see test_handler.py for new handler tests.
-from iam_looker.provisioner import LookerProvisioner
 
 
 class MockSDK:
@@ -66,6 +63,7 @@ def test_provision_happy_path():
         project_id="demo-project",
         group_email="analysts@company.com",
         template_dashboard_ids=[1, 2],
+        template_folder_id=None,
     )
     assert result["projectId"] == "demo-project"
     assert len(result["dashboardIds"]) == 2
@@ -74,20 +72,26 @@ def test_provision_happy_path():
         project_id="demo-project",
         group_email="analysts@company.com",
         template_dashboard_ids=[1, 2],
+        template_folder_id=None,
     )
     assert len(result2["dashboardIds"]) == 2  # reused
-    assert hasattr(sdk, "dashboard_copy")  # ensure method exists
+    assert sdk.dashboard_copy  # ensure method exists
 
 
 def test_validation_error():
     sdk = MockSDK()
     p = LookerProvisioner(sdk)
-    with pytest.raises(ValidationError):
+    try:
         p.provision(
             project_id="",
             group_email="no-at-sign",
             template_dashboard_ids=[],
+            template_folder_id=None,
         )
+    except ValidationError:
+        assert True
+    else:
+        assert False, "Expected ValidationError"
 
 
 def test_provision_happy_path_old():
@@ -97,6 +101,7 @@ def test_provision_happy_path_old():
         project_id="demo-project",
         group_email="analysts@company.com",
         template_dashboard_ids=[1, 2],
+        template_folder_id=None,
     )
     assert result["projectId"] == "demo-project"
     assert len(result["dashboardIds"]) == 2
@@ -104,6 +109,7 @@ def test_provision_happy_path_old():
         project_id="demo-project",
         group_email="analysts@company.com",
         template_dashboard_ids=[1, 2],
+        template_folder_id=None,
     )
     assert len(result2["dashboardIds"]) == 2
 

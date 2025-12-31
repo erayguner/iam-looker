@@ -1,210 +1,215 @@
 # Security Policy
 
-## Supported Versions
+## Reporting Security Vulnerabilities
 
-We release patches for security vulnerabilities for the following versions:
+We take the security of iam-looker seriously. If you discover a security vulnerability, please follow these steps:
+
+### 🔒 Private Disclosure
+
+**DO NOT** create a public GitHub issue for security vulnerabilities.
+
+Instead, please report security issues by:
+
+1. **Email:** Send details to the repository owner
+2. **GitHub Security Advisories:** Use the [Security tab](../../security/advisories/new) to create a private security advisory
+
+### 📝 What to Include
+
+When reporting a vulnerability, please include:
+
+- Description of the vulnerability
+- Steps to reproduce the issue
+- Potential impact
+- Suggested fix (if available)
+- Your contact information
+
+### ⏱️ Response Timeline
+
+- **Initial Response:** Within 48 hours
+- **Status Update:** Within 5 business days
+- **Fix Timeline:** Varies by severity (critical issues prioritized)
+
+## Security Measures
+
+### Automated Security Scanning
+
+This project uses multiple automated security scanning tools:
+
+#### Secret Scanning
+- **Gitleaks** - Detects hardcoded secrets, passwords, API keys
+- **TruffleHog** - Scans for high-entropy strings and secrets
+- **Detect-secrets** - Baseline-based secret detection
+- **Pre-commit hooks** - Prevents secrets from being committed
+
+#### Code Security
+- **Bandit** - Python security linter
+- **Semgrep** - Static analysis security testing (SAST)
+- **CodeQL** - Advanced semantic code analysis
+- **Ruff** - Security-focused linting rules
+
+#### Dependency Security
+- **pip-audit** - Scans Python dependencies for known vulnerabilities
+- **Safety** - Checks Python packages against vulnerability databases
+- **Dependabot** - Automated dependency updates and security patches
+
+#### Infrastructure Security
+- **Checkov** - Terraform/IaC security scanning
+- **Trivy** - Comprehensive vulnerability scanner
+- **Terraform validation** - Configuration validation
+
+### CI/CD Security
+
+All pull requests and commits undergo:
+
+1. ✅ Secret scanning (multiple tools)
+2. ✅ Code security analysis (Bandit, Semgrep, CodeQL)
+3. ✅ Dependency vulnerability scanning
+4. ✅ Infrastructure security checks (Checkov)
+5. ✅ Type safety checks (MyPy)
+6. ✅ Code quality linting (Ruff)
+
+### Continuous Monitoring
+
+- **Weekly Security Scans:** Comprehensive security audit every Monday
+- **Daily Secret Scanning:** Checks for exposed secrets daily
+- **Dependabot:** Monitors dependencies and creates PRs for security updates
+
+## Security Best Practices
+
+### For Contributors
+
+1. **Never commit secrets:**
+   - Use `.env` files (excluded from git)
+   - Use Google Secret Manager for production secrets
+   - Use pre-commit hooks to prevent accidental commits
+
+2. **Follow secure coding practices:**
+   - Input validation and sanitization
+   - Use type hints and static type checking
+   - Avoid SQL injection, XSS, command injection
+   - Use parameterized queries and safe APIs
+
+3. **Keep dependencies updated:**
+   - Review and merge Dependabot PRs promptly
+   - Pin dependency versions in requirements.txt
+   - Use only trusted packages
+
+4. **Use Workload Identity Federation:**
+   - Never create service account JSON keys
+   - Use WIF for all external authentication
+   - Follow least privilege principle
+
+### Infrastructure Security
+
+1. **Encryption:**
+   - Use CMEK (Customer-Managed Encryption Keys) for production
+   - Enable encryption at rest and in transit
+   - Rotate encryption keys regularly
+
+2. **Network Security:**
+   - Use VPC and private endpoints
+   - Configure firewall rules (least access)
+   - Use `ALLOW_INTERNAL_ONLY` for Cloud Functions
+
+3. **Access Control:**
+   - Follow principle of least privilege
+   - Use service accounts for applications
+   - Regularly audit IAM permissions
+   - Enable audit logging
+
+4. **Secret Management:**
+   - Store all secrets in Google Secret Manager
+   - Never hardcode secrets in code or config
+   - Use `secret_environment_variables` in Cloud Functions
+   - Rotate secrets regularly
+
+## Supported Versions
 
 | Version | Supported          |
 | ------- | ------------------ |
 | 0.1.x   | :white_check_mark: |
 | < 0.1   | :x:                |
 
-## Reporting a Vulnerability
+## Security Checklist for Deployment
 
-**Please do not report security vulnerabilities through public GitHub issues.**
+Before deploying to production:
 
-Instead, please report them via email to the repository maintainers. You should receive a response within 48 hours. If for some reason you do not, please follow up to ensure we received your original message.
-
-### What to Include
-
-Please include the following information in your report:
-
-- **Description**: A clear description of the vulnerability
-- **Impact**: What kind of vulnerability is it? (e.g., remote code execution, information disclosure)
-- **Affected Components**: Which parts of the codebase are affected?
-- **Reproduction Steps**: Step-by-step instructions to reproduce the issue
-- **Proof of Concept**: If applicable, provide a PoC
-- **Suggested Fix**: If you have ideas on how to fix it (optional)
-
-### Response Timeline
-
-- **Initial Response**: Within 48 hours
-- **Status Update**: Within 7 days
-- **Fix Timeline**: Varies based on severity and complexity
-  - Critical: 1-7 days
-  - High: 7-30 days
-  - Medium: 30-90 days
-  - Low: 90+ days
-
-## Security Best Practices
-
-### For Users
-
-1. **Never Commit Secrets**
-   - Use environment variables or Secret Manager
-   - Never commit `.env` files with real credentials
-   - Use `.env.example` as a template only
-
-2. **Use Workload Identity Federation**
-   - Avoid service account JSON keys
-   - Implement keyless authentication
-   - Follow the WIF setup in our documentation
-
-3. **Keep Dependencies Updated**
-   - Regularly update dependencies
-   - Enable Dependabot alerts
-   - Monitor security advisories
-
-4. **Secure Your Environment**
-   - Use principle of least privilege
-   - Enable Cloud Audit Logs
-   - Implement network security controls
-
-### For Contributors
-
-1. **Code Security**
-   - Run security linters (Bandit) before committing
-   - Use type hints to prevent type-related bugs
-   - Validate all inputs using Pydantic models
-   - Sanitize user inputs
-
-2. **Dependency Management**
-   - Pin dependency versions
-   - Review dependency security alerts
-   - Use `safety` to scan for known vulnerabilities
-   - Minimize dependency count
-
-3. **Infrastructure as Code**
-   - Run Checkov scans on Terraform code
-   - Follow GCP security best practices
-   - Use secure defaults
-   - Document security assumptions
-
-4. **Testing**
-   - Include security test cases
-   - Test authentication and authorization
-   - Test input validation
-   - Test error handling
+- [ ] All secrets stored in Secret Manager
+- [ ] CMEK encryption enabled for Pub/Sub topics
+- [ ] Workload Identity Federation configured
+- [ ] VPC and network security configured
+- [ ] IAM policies follow least privilege
+- [ ] Audit logging enabled
+- [ ] All dependencies up to date
+- [ ] Security scans passing
+- [ ] Pre-commit hooks installed
 
 ## Security Features
 
-### Authentication & Authorization
+### Current Implementation
 
-- **Workload Identity Federation**: Keyless authentication for CI/CD
-- **Service Account Impersonation**: Principle of least privilege
-- **API Key Rotation**: Support for credential rotation
+✅ **Secret Management**
+- Google Secret Manager integration
+- No hardcoded credentials
+- Environment variable validation
 
-### Data Protection
+✅ **Authentication**
+- Workload Identity Federation (WIF)
+- No service account JSON keys
+- OIDC-based authentication
 
-- **Secret Management**: Integration with GCP Secret Manager
-- **Encryption**: Use of TLS for all network communications
-- **Audit Logging**: Structured logging of all operations
+✅ **Encryption**
+- Optional CMEK for Pub/Sub topics
+- TLS/HTTPS for all communications
+- Encrypted secrets at rest
 
-### Infrastructure Security
+✅ **Network Security**
+- Internal-only Cloud Functions
+- VPC integration
+- Firewall rules
 
-- **Network Isolation**: VPC-attached resources
-- **IAM Policies**: Granular access controls
-- **Security Scanning**: Automated vulnerability detection
+✅ **Code Security**
+- Type safety (MyPy)
+- Security linting (Bandit, Semgrep)
+- Input validation (Pydantic)
+- SQL injection prevention
 
-### CI/CD Security
+✅ **CI/CD Security**
+- Automated security scanning
+- Secret detection
+- Dependency vulnerability checks
+- Infrastructure security validation
 
-- **Dependency Scanning**: Safety, pip-audit
-- **Code Scanning**: Bandit, CodeQL
-- **Secret Detection**: detect-secrets, TruffleHog
-- **SARIF Reports**: Security findings uploaded to GitHub
+### Planned Improvements
 
-## Security Scanning
+🔜 **Enhanced Monitoring**
+- Cloud Security Command Center integration
+- Real-time anomaly detection
+- Security incident response automation
 
-This project uses multiple security tools:
+🔜 **Advanced Protection**
+- Binary Authorization for Cloud Functions
+- VPC Service Controls
+- Organization policy constraints
 
-### Python Code
+🔜 **Compliance**
+- SOC 2 compliance documentation
+- GDPR data handling procedures
+- Audit trail improvements
 
-- **Bandit**: Security linter for Python code
-- **Safety**: Checks dependencies for known vulnerabilities
-- **pip-audit**: Audits Python packages for security issues
+## Security Contacts
 
-### Terraform
+For security-related questions or concerns:
 
-- **Checkov**: Infrastructure as Code security scanner
-- **tflint**: Terraform linting and security checks
-
-### Secrets
-
-- **detect-secrets**: Prevents secrets from being committed
-- **TruffleHog**: Scans for secrets in git history
-
-### General
-
-- **CodeQL**: Semantic code analysis
-- **Dependabot**: Automated dependency updates
-
-## Known Security Considerations
-
-### 1. Looker API Credentials
-
-Looker API credentials (`LOOKERSDK_CLIENT_ID` and `LOOKERSDK_CLIENT_SECRET`) must be:
-
-- Stored in Secret Manager
-- Never committed to version control
-- Rotated regularly
-- Scoped to minimum required permissions
-
-### 2. Workload Identity Federation
-
-When using WIF:
-
-- Verify repository claims in attribute conditions
-- Use specific branch/tag restrictions
-- Audit identity pool usage regularly
-- Document pool configuration
-
-### 3. Cloud Function Security
-
-Cloud Functions should:
-
-- Use internal-only ingress
-- Attach to VPC networks
-- Use service accounts with minimal permissions
-- Enable Cloud Armor (if using HTTP)
-
-### 4. Terraform State
-
-Terraform state files may contain sensitive data:
-
-- Use remote state with encryption
-- Enable state locking
-- Restrict state file access
-- Never commit state files
-
-## Compliance
-
-This project aims to comply with:
-
-- **OWASP Top 10**: Web application security risks
-- **CIS Benchmarks**: For GCP and Terraform
-- **Principle of Least Privilege**: Minimal necessary permissions
-- **Defense in Depth**: Multiple layers of security
-
-## Security Updates
-
-Security updates will be:
-
-- Released as patch versions (e.g., 0.1.3)
-- Documented in CHANGELOG.md
-- Announced via GitHub Security Advisories
-- Tagged with security labels
-
-## Additional Resources
-
-- [OWASP Top 10](https://owasp.org/www-project-top-ten/)
-- [GCP Security Best Practices](https://cloud.google.com/security/best-practices)
-- [Terraform Security Best Practices](https://www.terraform.io/docs/cloud/guides/recommended-practices/index.html)
-- [NIST Cybersecurity Framework](https://www.nist.gov/cyberframework)
+- **Security Issues:** Use GitHub Security Advisories
+- **General Security Questions:** Create a discussion in the repository
 
 ## Acknowledgments
 
-We appreciate the security research community and will acknowledge researchers who responsibly disclose vulnerabilities (unless they prefer to remain anonymous).
+We appreciate security researchers and contributors who help keep this project secure. Responsible disclosure of vulnerabilities is greatly valued.
 
----
+## Updates to This Policy
 
-Last Updated: 2025-11-16
+This security policy may be updated from time to time. Please check back regularly for updates.
+
+**Last Updated:** 2025-11-27

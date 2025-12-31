@@ -1,80 +1,66 @@
-# ============================================================================
-# Terraform Variables - Looker Automation Infrastructure
-# ============================================================================
-
-# GCP Project Configuration
 variable "project_id" {
-  description = "GCP Project ID"
-  type        = string
+  type = string
 }
 
 variable "project_number" {
-  description = "GCP Project Number (for Workload Identity Federation)"
-  type        = string
+  type = string
 }
 
 variable "region" {
-  description = "GCP region for resource deployment"
-  type        = string
-  default     = "us-central1"
+  type    = string
+  default = "us-central1"
 }
 
-# Workload Identity Federation
 variable "pool_id" {
-  description = "Workload Identity Pool ID for GitHub Actions"
-  type        = string
-  default     = "github-pool"
+  type    = string
+  default = "github-pool"
 }
 
 variable "provider_id" {
-  description = "Workload Identity Provider ID"
-  type        = string
-  default     = "github-provider"
+  type    = string
+  default = "github-provider"
 }
 
 variable "repository" {
-  description = "GitHub repository in format: owner/repo"
   type        = string
+  description = "GitHub org/repo for OIDC"
 }
 
 variable "ci_service_account_id" {
-  description = "Service account ID for CI/CD operations"
+  type    = string
+  default = "ci-deployer"
+}
+
+variable "source_bucket" {
+  type = string
+}
+
+variable "source_object" {
+  type = string
+}
+
+variable "vpc_network" {
   type        = string
-  default     = "ci-deployer"
+  description = "Full self_link of VPC network for internal API Gateway"
 }
 
-# Cloud Functions Configuration
-variable "python_runtime" {
-  description = "Python runtime version for Cloud Functions"
+variable "looker_base_url" {
   type        = string
-  default     = "python312"
+  description = "Looker instance base URL"
 }
 
-variable "function_timeout" {
-  description = "Default timeout for Cloud Functions (seconds)"
-  type        = number
-  default     = 180
-}
-
-variable "max_instances" {
-  description = "Maximum number of function instances"
-  type        = number
-  default     = 10
-}
-
-# Environment Labels
-variable "environment" {
-  description = "Environment name (development, staging, production)"
+variable "looker_client_id" {
   type        = string
-  default     = "development"
-  validation {
-    condition     = contains(["development", "staging", "production"], var.environment)
-    error_message = "Environment must be development, staging, or production."
-  }
+  description = "Client ID (prefer Secret Manager, variable only for legacy)"
 }
 
-variable "labels" {
-  description = "Additional labels to apply to all resources"
-  type        = map(string)
-  default     = {}
+variable "looker_client_secret" {
+  type        = string
+  description = "Client Secret (prefer Secret Manager, variable only for legacy)"
+}
+
+variable "kms_key_name" {
+  type        = string
+  description = "Customer-managed encryption key for PubSub topics (optional, recommended for production)"
+  default     = null
 }

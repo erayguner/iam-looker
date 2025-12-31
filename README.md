@@ -1,128 +1,50 @@
 # iam-looker
+Looker user onboarding automation
 
-[![CI](https://github.com/erayguner/iam-looker/actions/workflows/ci.yml/badge.svg)](https://github.com/erayguner/iam-looker/actions/workflows/ci.yml)
-[![MegaLinter](https://github.com/erayguner/iam-looker/workflows/MegaLinter/badge.svg?branch=main)](https://github.com/erayguner/iam-looker/actions?query=workflow%3AMegaLinter+branch%3Amain)
-[![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
-[![Terraform](https://img.shields.io/badge/terraform-1.11.0-623CE4.svg)](https://www.terraform.io/)
-[![Checked with mypy](https://img.shields.io/badge/mypy-checked-blue.svg)](http://mypy-lang.org/)
-[![Security: bandit](https://img.shields.io/badge/security-bandit-yellow.svg)](https://github.com/PyCQA/bandit)
+## Project Objectives
+- Automate onboarding of Google Cloud projects into a Looker instance.
+- Provision access for Google Workspace groups via Looker SAML configuration updates.
+- Create project-scoped Looker folders and clone dashboard templates with project context (project ID / ancestry path).
+- Ensure idempotent, observable, secure operations driven by a spec-first workflow.
+- Enforce keyless security posture (no long-lived service account keys) via Workload Identity Federation (WIF) for CI/CD.
 
-> Automated Looker user onboarding and project provisioning for Google Cloud Platform
+## High-Level Goal
+Given a Cloud Pub/Sub event (or HTTP trigger) containing a GCP project ID (and optional ancestry path) plus the associated Google Workspace group email, automatically:
+1. Validate and normalize the incoming payload.
+2. Provision or map the Workspace group inside Looker (create Looker Group if missing).
+3. Update SAML settings to include the group with correct role/folder access.
+4. Create (or find) a project folder in Looker.
+5. Clone a set of template dashboards into that folder, performing token substitution (e.g. {{PROJECT_ID}}, {{ANCESTRY_PATH}}).
+6. Emit a structured result + metrics / logs for observability.
 
-## Overview
+## Spec-Driven Development
+A living specification file (`SPEC.md`) defines:
+- Data contracts for the triggering event.
+- API interactions with Looker SDK.
+- Idempotency rules and reconciliation logic.
+- Error taxonomy & retry semantics.
+- Non-functional requirements (security, performance, auditing).
+- Workload Identity Federation requirements (no service account keys).
 
-**iam-looker** automates the onboarding of Google Cloud projects into Looker instances, handling group
-provisioning, folder creation, and dashboard cloning with complete observability and security.
+All implementation MUST conform to the spec. Changes begin by updating `SPEC.md` then implementing code & tests.
 
-### Key Features
+See `SPEC.md` for the authoritative detailed specification.
 
-- **Automated Group Provisioning**: Sync Google Workspace groups to Looker via SAML configuration
-- **Project Folder Management**: Create and manage project-scoped Looker folders with naming conventions
-- **Dashboard Templating**: Clone template dashboards with dynamic token substitution (PROJECT_ID, ANCESTRY_PATH)
-- **Idempotent Operations**: Safe to run repeatedly without duplicates
-- **Keyless Security**: Workload Identity Federation for all CI/CD (no service account keys)
-- **Observable**: Structured JSON logging with correlation IDs
-- **Cloud Native**: Google Cloud Functions Gen2 with Pub/Sub and HTTP triggers
+## Architecture Overview
+- Trigger: Cloud Function (Pub/Sub or HTTP) receives onboarding request.
+- Core Modules:
+  - `config.py` loads environment & static config.
+  - `looker_provisioner.py` encapsulates Looker API interactions.
+  - `dashboard_template.py` handles template retrieval & cloning logic.
+  - `main.py` orchestration entrypoint.
+- External Services:
+  - Looker API via `looker_sdk` (API 4.0).
+  - Google Workspace group (email provided; optional validation via Admin SDK in future).
+- Security: CI/CD uses Workload Identity Federation (GitHub OIDC or Cloud Build) – no JSON keys checked in or distributed.
+- Observability: Structured logging (JSON), metrics hooks (extensible), correlation ID propagation.
 
-## Quick Start
-
-### Prerequisites
-
-- Python 3.12 or higher
-- Terraform 1.11.0+
-- Google Cloud Platform project
-- Looker instance with API access
-
-### Installation
-
-```bash
-# Clone the repository
-git clone https://github.com/erayguner/iam-looker.git
-cd iam-looker
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Or install with development tools
-pip install -e ".[dev]"
-
-# Set up pre-commit hooks
-pre-commit install
+## Event Payload Contract (Summary)
 ```
-
-### Configuration
-
-Create a `.env` file or export environment variables:
-
-```bash
-export LOOKERSDK_BASE_URL="https://your.looker.instance:19999"
-export LOOKERSDK_CLIENT_ID="your_client_id"
-export LOOKERSDK_CLIENT_SECRET="your_client_secret"
-export LOOKERSDK_VERIFY_SSL=true
-```
-
-**⚠️ Security Note**: Never commit real credentials. Use Secret Manager in production.
-
-### Local Testing
-
-```bash
-# Run tests
-make test
-
-# Run tests with coverage
-make test-cov
-
-# Lint code
-make lint
-
-# Format code
-make format
-
-# Run all checks (CI simulation)
-make ci
-
-# Simulate an event locally
-python functions/main.py '{"projectId":"demo","groupEmail":"demo-group@company.com"}'
-```
-
-## Project Structure
-
-```text
-iam-looker/
-├── src/iam_looker/          # Main package (2025 src layout)
-│   ├── __init__.py          # Package initialization
-│   ├── cli.py               # CLI commands
-│   ├── exceptions.py        # Custom exceptions
-│   ├── handler.py           # Cloud Function handler logic
-│   ├── logging.py           # Structured JSON logging
-│   ├── models.py            # Pydantic models for validation
-│   ├── provisioner.py       # Looker API orchestration
-│   ├── settings.py          # Centralized configuration
-│   └── templates.py         # Dashboard template processing
-├── functions/               # Cloud Function entry points
-│   └── main.py              # All Cloud Function handlers
-├── scripts/                 # Utility scripts
-│   └── bootstrap_looker.py  # Manual provisioning helper
-├── tests/                   # Test suite
-│   ├── __init__.py
-│   ├── conftest.py          # Pytest configuration
-│   ├── test_handler.py      # Handler tests
-│   └── test_provisioner.py  # Provisioner tests
-├── terraform/               # Infrastructure as Code
-│   ├── main.tf              # Main Terraform config
-│   ├── functions.tf         # Cloud Functions deployment
-│   └── modules/wif_github/  # Workload Identity Federation
-├── .github/workflows/       # GitHub Actions CI/CD
-└── pyproject.toml           # Project metadata and config
-```
-
-## Event Payload Contract
-
-### Pub/Sub Event
-
-```json
 {
   "projectId": "my-gcp-project",
   "ancestryPath": "organization/12345 -> folder/67890 -> project/abcdef",
@@ -132,365 +54,280 @@ iam-looker/
   "tokens": {"EXTRA_KEY": "value"}
 }
 ```
-
 Base64-encoded in `data` for Pub/Sub; raw JSON for HTTP.
 
-### Field Descriptions
+## Idempotency Strategy
+- Looker group looked up by name/email before creation.
+- Folder looked up by convention: `Project: <projectId>`.
+- Dashboard clones searched by slug/title pattern before cloning.
+- SAML config merged, not overwritten.
 
-- **projectId** (required): GCP project ID (RFC1034 label format)
-- **groupEmail** (required): Google Workspace group email
-- **ancestryPath** (optional): Organization/folder hierarchy path
-- **templateDashboardIds** (optional): Dashboard IDs to clone (uses defaults if absent)
-- **templateFolderId** (optional): Source folder for templates
-- **tokens** (optional): Additional key-value pairs for substitution
+## Security Posture (Keyless / WIF)
+We DO NOT create or use long-lived service account JSON keys.
+Instead, we rely on Workload Identity Federation (WIF) so external identities (e.g. GitHub Actions runners) can obtain short-lived credentials.
 
-## Architecture
+### Why Avoid Keys?
+- Keys are static, hard to rotate, and prone to leakage.
+- WIF provides ephemeral tokens, audited in Cloud Logging.
 
-### High-Level Flow
-
-```text
-┌─────────────┐      ┌──────────────────┐      ┌──────────────┐
-│  Pub/Sub    │─────▶│ Cloud Function   │─────▶│   Looker     │
-│  / HTTP     │      │  (Gen2)          │      │   API 4.0    │
-└─────────────┘      └──────────────────┘      └──────────────┘
-                              │
-                              ▼
-                     ┌──────────────────┐
-                     │ Secret Manager   │
-                     │ (credentials)    │
-                     └──────────────────┘
+### CI/CD Pattern (GitHub OIDC Example)
+Terraform snippet (see `terraform/` directory for full example):
+```hcl
+module "ci_wif" {
+  source = "./modules/wif_github"
+  project_id = var.project_id
+  pool_id    = var.pool_id            # e.g. "github-pool"
+  provider_id = var.provider_id       # e.g. "github-provider"
+  repository  = var.repository        # e.g. "org/repo"
+  sa_id       = var.ci_service_account_id  # e.g. "ci-deployer"
+}
 ```
-
-### Operations
-
-1. **Validate Payload**: Pydantic model validation with clear error messages
-2. **Ensure Group**: Lookup or create Looker group (idempotent)
-3. **Update SAML**: Add group to SAML configuration (merge, not overwrite)
-4. **Create Folder**: Find or create project folder with naming convention
-5. **Clone Dashboards**: Copy templates with token substitution
-6. **Log Results**: Structured JSON logging with correlation ID
-
-### Cloud Functions
-
-| Function Name | Entry Point | Trigger | Description |
-|--------------|-------------|---------|-------------|
-| `looker-provision-all` | `provision_looker_project` | Pub/Sub | Complete provisioning workflow |
-| `looker-add-group-saml` | `add_group_to_saml` | Pub/Sub | Add group to SAML only |
-| `looker-create-folder` | `create_project_folder` | Pub/Sub | Create project folder only |
-| `looker-clone-dashboard` | `create_dashboard_from_template` | Pub/Sub | Clone dashboard only |
-| `looker-http-provision` | `http_provision` | HTTP | HTTP endpoint for provisioning |
-
-## Deployment
-
-### Terraform Deployment (Recommended)
-
-Deploy the entire infrastructure with a single `terraform apply`. Includes **automatic redeployment** when Python code changes.
-
-#### Quick Start
-
-```bash
-cd terraform
-
-# 1. Initialize Terraform
-terraform init
-
-# 2. Create terraform.tfvars
-cat > terraform.tfvars <<EOF
-project_id     = "my-analytics-prod"
-project_number = "123456789012"
-repository     = "your-org/your-repo"
-region         = "us-central1"
-EOF
-
-# 3. Review what will be created
-terraform plan
-
-# 4. Deploy infrastructure
-terraform apply
-
-# 5. Configure Looker credentials
-echo -n "your-client-id" | gcloud secrets versions add looker-client-id --data-file=-
-echo -n "your-client-secret" | gcloud secrets versions add looker-client-secret --data-file=-
-echo -n "https://your-instance.looker.com:19999" | gcloud secrets versions add looker-base-url --data-file=-
-```
-
-#### What Gets Deployed
-
-- **Storage**: GCS bucket with versioning for function source code
-- **Secrets**: 3 Secret Manager secrets for Looker credentials
-- **Pub/Sub**: 7 topics for event-driven architecture
-- **Event Functions**: 7 Pub/Sub-triggered Cloud Functions
-  - provision_project, decommission_project, add_user_to_group
-  - create_user, bulk_provision_users, create_project_folder, create_connection
-- **HTTP Functions**: 3 HTTP-triggered Cloud Functions
-  - add_group_to_saml, create_folder, create_dashboard
-- **API Gateway**: Unified REST API with OpenAPI specification
-- **WIF**: Workload Identity Federation for GitHub Actions
-
-#### Auto-Redeployment
-
-Functions **automatically redeploy** when Python code changes:
-
-```bash
-# Make any Python change
-vim src/iam_looker/provisioner.py
-
-# Terraform detects the change via MD5 hash
-terraform plan
-# Shows: source object will be recreated, functions will be updated
-
-# Deploy the change
-terraform apply
-```
-
-**How it works**:
-
-1. Source code packaged as `source-{md5}.zip`
-2. MD5 changes when any Python file changes
-3. New ZIP uploaded with new filename
-4. Functions detect source object change and redeploy
-5. Zero downtime via `create_before_destroy`
-
-#### Testing
-
-Run comprehensive Terraform tests:
-
-```bash
-cd terraform
-terraform test  # Runs 10 test suites, 50+ assertions
-```
-
-📖 **Full Documentation**: [docs/TERRAFORM_DEPLOYMENT.md](docs/TERRAFORM_DEPLOYMENT.md)
-
-### Manual Cloud Function Deployment
-
-```bash
-gcloud functions deploy looker-provision-all \
-  --gen2 \
-  --runtime=python312 \
-  --region=us-central1 \
-  --source=. \
-  --entry-point=provision_looker_project \
-  --trigger-topic=looker-onboard-topic \
-  --service-account=looker-onboard-sa@PROJECT_ID.iam.gserviceaccount.com \
-  --set-secrets=LOOKERSDK_BASE_URL=looker-base-url:latest,LOOKERSDK_CLIENT_ID=looker-client-id:latest,LOOKERSDK_CLIENT_SECRET=looker-client-secret:latest
-```
-
-### CI/CD with GitHub Actions
-
-The project includes comprehensive GitHub Actions workflows:
-
-- **CI**: Linting, testing, security scanning, Terraform validation
-- **Deploy Cloud Functions**: Automated deployment to dev/staging/prod
-- **Deploy Terraform**: Infrastructure deployment with plan/apply/destroy
-- **Release**: Automated releases with changelog and Docker images
-- **PR Comments**: Automated CI results and coverage reports on pull requests
-
-See [.github/WORKFLOWS.md](.github/WORKFLOWS.md) for complete documentation.
-
-## Security
-
-### Keyless Architecture (Workload Identity Federation)
-
-**⚠️ We DO NOT use service account JSON keys.**
-
-Instead, we use Workload Identity Federation (WIF) for all external authentication:
-
-- **GitHub Actions**: OIDC token exchange for short-lived GCP credentials
-- **Cloud Functions**: Attached service account with Application Default Credentials
-- **No Keys**: Enforced via organization policy when possible
-
-### Security Features
-
-- **Secret Manager**: All credentials stored in GCP Secret Manager
-- **Least Privilege**: Service accounts have minimal required permissions
-- **Input Validation**: Pydantic models validate all inputs
-- **Audit Logging**: All operations logged to Cloud Logging
-- **No Secrets in Code**: Never commit credentials to repository
-
-### CI/CD Pattern (GitHub OIDC)
-
+GitHub workflow excerpt (identity only; no key):
 ```yaml
 permissions:
   id-token: write
   contents: read
 
 steps:
-  - name: Authenticate to Google Cloud
+  - name: Auth via WIF
     uses: google-github-actions/auth@v2
     with:
-      workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
-      service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+      workload_identity_provider: "projects/<PROJECT_NUMBER>/locations/global/workloadIdentityPools/<POOL_ID>/providers/<PROVIDER_ID>"
+      service_account: "ci-deployer@<PROJECT_ID>.iam.gserviceaccount.com"
+  - name: Terraform Apply
+    run: |
+      terraform init
+      terraform apply -auto-approve
 ```
 
-## Development
+### Cloud Function Runtime
+Cloud Functions / Cloud Run uses its attached service account (no key) and Application Default Credentials (ADC) automatically. No manual key creation required.
 
-### Setup Development Environment
+## Error Handling (Brief)
+- Invalid payload: 400 / logged error.
+- Looker API transient (HTTP 429/5xx): retry with exponential backoff (to be added).
+- Permanent errors escalate to dead-letter / alerting.
 
+## Local Development
+
+### Prerequisites
+- Python 3.12 or higher
+- Terraform 1.10.3 or higher (for infrastructure)
+- Make (optional, for convenience commands)
+
+### Quick Start
+
+1. **Install Python dependencies:**
 ```bash
-# Using make
-make dev-setup
+# Install production dependencies
+pip install -r requirements.txt
 
-# Or manually
-pip install -e ".[dev,terraform,all]"
+# Install development dependencies (recommended)
+make install-dev
+# Or: pip install -e ".[dev]"
+```
+
+2. **Set up pre-commit hooks (recommended):**
+```bash
 pre-commit install
-
-# Using Docker
-docker-compose up -d dev
-docker-compose exec dev bash
 ```
 
-### Running Tests
-
+3. **Configure environment:**
+Create & populate `.env` or export credentials:
 ```bash
-# Run all tests
-pytest
+export LOOKERSDK_BASE_URL="https://your.looker.instance:19999"
+export LOOKERSDK_CLIENT_ID="client_id"
+export LOOKERSDK_CLIENT_SECRET="client_secret"
+export LOOKERSDK_VERIFY_SSL=true
+```
+(These are Looker API credentials – distinct from GCP identity. Never commit real secrets.)
 
-# With coverage
-pytest --cov=src/iam_looker --cov-report=html
-
-# Specific test file
-pytest tests/test_handler.py -v
-
-# Using make
-make test-cov
+4. **Run tests:**
+```bash
+make test
+# Or: pytest -v
 ```
 
-### Code Quality
-
+5. **Run linters and checks:**
 ```bash
-# Lint with Ruff
-ruff check .
+# Run all checks (linting, formatting, type-checking, security)
+make check
+
+# Auto-fix linting issues
+make lint-fix
 
 # Format code
-ruff format .
-
-# Type check with mypy
-mypy src/
-
-# Security scan
-bandit -r src/
-
-# All checks
-make ci
+make format
 ```
 
-### Pre-commit Hooks
-
-Pre-commit hooks run automatically on `git commit`:
-
-- Trailing whitespace removal
-- YAML/JSON validation
-- Ruff linting and formatting
-- MyPy type checking
-- Bandit security scan
-- Terraform formatting and validation
-- Secret detection
-- Commit message linting (Conventional Commits)
-
-Run manually: `pre-commit run --all-files`
-
-## Idempotency
-
-All operations are designed to be idempotent and safe to run repeatedly:
-
-| Operation | Lookup Strategy | Idempotent Behavior |
-|-----------|----------------|---------------------|
-| **Group** | Search by name/email | Reuse existing or create new |
-| **SAML Config** | Fetch current config | Merge group, don't overwrite |
-| **Folder** | Search by pattern `Project: <projectId>` | Reuse existing or create new |
-| **Dashboard** | Search by title pattern | Skip if exists, else clone |
-
-## Error Handling
-
-- **Invalid Payload**: 400 error with validation details
-- **Looker API Transient**: Retry with exponential backoff (future)
-- **Permanent Errors**: Logged and escalated to dead-letter queue
-- **Correlation IDs**: Track requests across distributed systems
-
-## Observability
-
-### Structured Logging
-
-All logs are JSON-formatted for easy ingestion:
-
-```json
-{
-  "timestamp": "2025-01-15T10:30:00Z",
-  "level": "INFO",
-  "event": "group.ensure",
-  "projectId": "my-project",
-  "correlationId": "550e8400-e29b-41d4-a716-446655440000",
-  "message": "Looker group ensured",
-  "details": {"groupId": 123}
-}
+6. **Simulate event:**
+```bash
+python cloud_function/main.py '{"projectId":"demo","groupEmail":"demo-group@company.com"}'
 ```
 
-### Metrics (Future)
+### Development Tools (2025 Best Practices)
 
-Planned metrics exporter for:
+This project uses modern Python tooling:
 
-- Request duration (P50, P95, P99)
-- Success/failure rates
-- Resource creation counts
-- Looker API call latency
+- **Ruff**: Fast linter and formatter (replaces black, isort, flake8)
+- **MyPy**: Static type checking
+- **Bandit**: Security vulnerability scanning
+- **Pytest**: Testing framework
+- **Pre-commit**: Automated code quality checks
+- **Checkov**: Infrastructure security scanning
 
-## 2025 Python Best Practices
+See [DEVELOPMENT.md](DEVELOPMENT.md) for detailed development guide.
 
-This project follows modern Python development standards:
+### Common Commands
 
-1. **src/ Layout**: Explicit package structure (`iam_looker`)
-2. **Pydantic v2**: Type-safe models for validation and settings
-3. **Structured Logging**: JSON logs with correlation IDs
-4. **Thin Handlers**: Business logic separated from transport layer
-5. **Type Hints**: Full mypy strict mode compliance
-6. **Modern Tools**: Ruff (linting), pytest (testing), pre-commit (quality gates)
-7. **Dependency Pinning**: Major version pinning for stability
+```bash
+make help              # Show all available commands
+make install-dev       # Install development dependencies
+make test              # Run tests
+make lint              # Run linter
+make lint-fix          # Auto-fix linting issues
+make format            # Format code
+make security          # Run security checks
+make type-check        # Run type checking
+make check             # Run all checks
+make clean             # Clean cache files
+make ci                # Run CI checks locally
+```
 
-## Roadmap
+## Deployment (GCP Cloud Functions Gen2 example)
+```
+gcloud functions deploy lookerOnboard \
+  --gen2 \
+  --runtime=python310 \
+  --region=us-central1 \
+  --source=. \
+  --entry-point=provision_looker_project \
+  --trigger-topic=looker-onboard-topic \
+  --service-account=looker-onboard-sa@<PROJECT_ID>.iam.gserviceaccount.com \
+  --set-env-vars=LOOKERSDK_BASE_URL=...,LOOKERSDK_CLIENT_ID=...,LOOKERSDK_CLIENT_SECRET=...
+```
+Service account has only necessary roles (e.g. logging writer). No key created.
 
-- [x] Core provisioning workflow
-- [x] Idempotent operations
-- [x] Structured logging
-- [x] Terraform deployment
-- [x] CI/CD with GitHub Actions
-- [x] Workload Identity Federation
-- [x] Pre-commit hooks
-- [ ] Retry/backoff wrapper
-- [ ] Metrics exporter (Prometheus/OpenTelemetry)
-- [ ] Workspace group validation via Admin SDK
-- [ ] Dashboard metadata tagging (replace title-based matching)
-- [ ] Multi-project batch processing
-- [ ] Advanced role assignment logic
+## Deployment Hashing
+An `archive_file` data source packages source and names the object with its MD5 hash. Any code change -> new zip MD5 -> new GCS object name -> Terraform detects drift and recreates Cloud Functions (redeploy). No manual version bump needed.
 
-## Contributing
+## Single-Task Cloud Functions
+Pub/Sub triggered functions:
+- add_group_to_saml
+- create_project_folder
+- create_dashboard_from_template
+HTTP internal functions (API Gateway backend) mirror the same tasks with `http-` prefixed names.
+API Gateway attached to VPC network (`vpc_network`) for internal-only access.
 
-We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for:
+### Terraform Testing
+`tftest.hcl` defines variable inputs and a plan run for validation using native Terraform test framework.
 
-- Code of conduct
-- Development setup
-- Testing requirements
-- Pull request process
-- Coding standards
+## Repository Structure
+```
+/terraform
+  providers.tf
+  variables.tf
+  main.tf
+  functions.tf
+  http_functions.tf
+  /modules/wif_github
+/src
+  /iam_looker
+    __init__.py
+    handler.py
+    models.py
+    settings.py
+    logging.py
+    exceptions.py
+    provisioner.py
+    cli.py
+  config.py (legacy)
+  dashboard_template.py (legacy)
+  looker_provisioner.py (legacy)
+/functions
+  main.py (all Cloud Function entry points)
+```
 
-## Documentation
+## Security Considerations
+- Secrets managed via Secret Manager (future improvement): reference them in env vars.
+- Principle of least privilege for Looker API credentials.
+- Input validation & sanitization for all template tokens.
+- Keyless CI/CD with WIF; forbid `google_service_account_key` resources in Terraform.
 
-- [SPEC.md](SPEC.md) - Authoritative technical specification
-- [CONTRIBUTING.md](CONTRIBUTING.md) - Contribution guidelines
-- [SECURITY.md](SECURITY.md) - Security policy and vulnerability reporting
-- [CHANGELOG.md](CHANGELOG.md) - Version history
-- [.github/WORKFLOWS.md](.github/WORKFLOWS.md) - GitHub Actions workflows documentation
+## Testing Strategy
+- Unit tests mock `looker_sdk` client.
+- Contract tests ensure payload schema compliance.
+- Future: Integration tests against Looker sandbox.
 
-## License
+## Next Steps / Roadmap
+- Implement retry/backoff wrapper.
+- Add metrics exporter (Prometheus / Cloud Monitoring).
+- Workspace group validation via Admin SDK.
+- Secret Manager integration.
+- Replace dashboard title uniqueness with metadata tagging.
+- Terraform module to manage Looker-related IAM (no keys).
 
-This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
+## Security
 
-## Support
+This project implements comprehensive security measures following industry best practices:
 
-- **Issues**: [GitHub Issues](https://github.com/erayguner/iam-looker/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/erayguner/iam-looker/discussions)
-- **Security**: See [SECURITY.md](SECURITY.md) for vulnerability reporting
+### 🔒 Security Features
+
+- **Secret Management:** Google Secret Manager integration, no hardcoded credentials
+- **Authentication:** Workload Identity Federation (WIF), zero long-lived keys
+- **Encryption:** Optional CMEK for Pub/Sub topics, TLS everywhere
+- **Network Security:** VPC integration, internal-only endpoints
+- **Input Validation:** Pydantic models with strict type checking
+- **Code Security:** Multiple automated security scanners
+
+### 🛡️ Automated Security Scanning
+
+**CI/CD Security:**
+- Secret scanning (Gitleaks, TruffleHog, detect-secrets)
+- Code security (Banban, Semgrep, CodeQL)
+- Dependency vulnerabilities (pip-audit, Safety)
+- Infrastructure security (Checkov, Trivy)
+- Daily and weekly automated scans
+
+**Local Security Checks:**
+```bash
+make security       # Run Bandit
+make security-all   # Run all security scanners
+make secrets-scan   # Scan for secrets
+```
+
+See [SECURITY.md](SECURITY.md) for security policy and vulnerability reporting.
+
+### 📊 Security Badges
+
+[![Security Scan](https://img.shields.io/badge/security-scan-brightgreen)](https://github.com/erayguner/iam-looker/actions)
+[![Dependabot](https://img.shields.io/badge/dependabot-enabled-blue)](https://github.com/erayguner/iam-looker/network/updates)
+
+## 2025 Python Best Practices Adopted
+1. src/ layout with explicit package (`iam_looker`).
+2. Pydantic models for input validation & settings management.
+3. JSON structured logging for better observability.
+4. Thin handler entrypoint separated from business logic for testability.
+5. Immutable result dataclasses replaced by pydantic models for consistent serialisation.
+6. Dependency pinning (major versions) and pyproject classifiers for ecosystem clarity.
+7. Backward compatibility layer (legacy modules) scheduled for deprecation.
+8. Comprehensive security scanning and automated dependency updates.
+9. Modern linting with Ruff (replaces black, isort, flake8).
+10. Strict type checking with MyPy and pre-commit hooks.
+
+## Secret Management
+Sensitive values (Looker client id/secret) are injected via Cloud Functions `secret_environment_variables` referencing Secret Manager secrets (`looker-client-id`, `looker-client-secret`). Do not place them in `terraform.tfvars`. The only recommended tfvars are `project_id`, `project_number`, `region`, and possibly deployment artifact settings (bucket/object) which are not secrets.
+
+### Example terraform.tfvars
+```
+project_id    = "my-analytics-prod"
+project_number = "123456789012"
+region        = "us-central1"
+source_bucket = "cf-source-artifacts"
+source_object = "placeholder.zip" # overwritten by archive_file object name
+vpc_network   = "projects/123456789012/global/networks/shared-vpc"
+```
+All other secure values must reside in Secret Manager and referenced by name.
 
 ---
-
-Built with ❤️ for the data platform engineering community
+Refer to `SPEC.md` for the exhaustive specification.

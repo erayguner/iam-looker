@@ -1,5 +1,3 @@
-"""Pydantic models for validation and data structures."""
-
 import re
 
 from pydantic import BaseModel, EmailStr, Field, PositiveInt, field_validator
@@ -17,7 +15,7 @@ class ProvisionPayload(BaseModel):
 
     @field_validator("projectId")
     @classmethod
-    def validate_project_id(cls, v: str) -> str:
+    def validate_project_id(cls, v):
         if not PROJECT_ID_REGEX.match(v):
             raise ValueError("Invalid projectId format")
         return v

@@ -6,7 +6,7 @@ import os
 from iam_looker.handler import handle_event
 
 
-def main() -> None:
+def main():
     event = {
         "projectId": os.getenv("BOOTSTRAP_PROJECT_ID", "demo-project"),
         "groupEmail": os.getenv("BOOTSTRAP_GROUP_EMAIL", "analysts@company.com"),
