@@ -8,7 +8,7 @@ help: ## Show this help message
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
 install: ## Install production dependencies
-	pip install -r requirements.txt
+	pip install .
 
 install-dev: ## Install development dependencies
 	pip install -e ".[dev]"
@@ -37,7 +37,7 @@ security-all: ## Run all security scanners (bandit, pip-audit, gitleaks)
 	@echo "\n==> Bandit (Python code security)"
 	bandit -r src/ -c pyproject.toml || true
 	@echo "\n==> pip-audit (dependency vulnerabilities)"
-	pip-audit --requirement requirements.txt || true
+	pip-audit || true
 	@echo "\n==> Gitleaks (secret detection)"
 	docker run --rm -v $(PWD):/path zricethezav/gitleaks:latest detect --source="/path" -v || true
 	@echo "\nSecurity scan complete!"
