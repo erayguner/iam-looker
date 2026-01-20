@@ -1,6 +1,8 @@
 import logging
 import uuid
 
+from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
+
 from .exceptions import ProvisioningError, ValidationError
 
 logger = logging.getLogger("iam_looker.provisioner")
@@ -10,6 +12,11 @@ class LookerProvisioner:
     def __init__(self, sdk):
         self.sdk = sdk
 
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=2, max=10),
+        retry=retry_if_exception_type(ProvisioningError),
+    )
     def ensure_group(self, group_email: str) -> int:
         try:
             existing = self.sdk.search_groups(name=group_email) or []
@@ -34,6 +41,11 @@ class LookerProvisioner:
         )
         return int(gid)
 
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=2, max=10),
+        retry=retry_if_exception_type(ProvisioningError),
+    )
     def ensure_project_folder(self, project_id: str) -> int:
         folder_name = f"Project: {project_id}"
         try:
@@ -53,6 +65,11 @@ class LookerProvisioner:
         logger.info("Created folder", extra={"event": "folder.create", "folderId": fid})
         return int(fid)
 
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=2, max=10),
+        retry=retry_if_exception_type(ProvisioningError),
+    )
     def clone_dashboard_if_missing(
         self, template_dashboard_id: int, target_folder_id: int, project_id: str
     ) -> int | None:
@@ -83,6 +100,11 @@ class LookerProvisioner:
         logger.info("Cloned dashboard", extra={"event": "dashboard.clone", "dashboardId": did})
         return int(did)
 
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=2, max=10),
+        retry=retry_if_exception_type(ProvisioningError),
+    )
     def ensure_saml_group_mapping(self, group_id: int, group_email: str) -> None:
         try:
             saml_cfg = self.sdk.saml_config()
