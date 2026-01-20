@@ -1,3 +1,7 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "iam-looker"
 version = "0.1.2"
@@ -5,6 +9,13 @@ description = "Looker user onboarding automation"
 readme = "README.md"
 requires-python = ">=3.12"
 license = {text = "Apache-2.0"}
+dependencies = [
+    "looker_sdk>=24.0.0",
+    "python-dotenv>=1.0.0",
+    "pydantic[email]>=2.7,<3",
+    "pydantic-settings>=2.3.0",
+    "tenacity>=8.2.0",
+]
 
 [project.optional-dependencies]
 dev = [
