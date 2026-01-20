@@ -1,8 +1,9 @@
 import logging
 import uuid
 
+from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
+
 from .exceptions import ProvisioningError, ValidationError
-from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
 logger = logging.getLogger("iam_looker.provisioner")
 
