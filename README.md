@@ -1,4 +1,14 @@
 # iam-looker
+
+[![CI](https://github.com/erayguner/iam-looker/actions/workflows/ci.yml/badge.svg)](https://github.com/erayguner/iam-looker/actions/workflows/ci.yml)
+[![Security Scan](https://github.com/erayguner/iam-looker/actions/workflows/security-scan.yml/badge.svg)](https://github.com/erayguner/iam-looker/actions/workflows/security-scan.yml)
+[![Secret Scanning](https://github.com/erayguner/iam-looker/actions/workflows/secret-scanning.yml/badge.svg)](https://github.com/erayguner/iam-looker/actions/workflows/secret-scanning.yml)
+[![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
+[![Terraform 1.10+](https://img.shields.io/badge/terraform-1.10+-purple.svg)](https://www.terraform.io/)
+[![Code style: Ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
+[![Pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
+[![Dependabot](https://img.shields.io/badge/dependabot-enabled-blue?logo=dependabot)](https://github.com/erayguner/iam-looker/security/dependabot)
+
 Looker user onboarding automation
 
 ## Project Objectives
@@ -297,11 +307,6 @@ make secrets-scan   # Scan for secrets
 ```
 
 See [SECURITY.md](SECURITY.md) for security policy and vulnerability reporting.
-
-### 📊 Security Badges
-
-[![Security Scan](https://img.shields.io/badge/security-scan-brightgreen)](https://github.com/erayguner/iam-looker/actions)
-[![Dependabot](https://img.shields.io/badge/dependabot-enabled-blue)](https://github.com/erayguner/iam-looker/network/updates)
 
 ## 2025 Python Best Practices Adopted
 1. src/ layout with explicit package (`iam_looker`).
