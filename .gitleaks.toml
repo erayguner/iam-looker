@@ -46,7 +46,11 @@ paths = [
     # Allow test fixtures
     '''tests/fixtures/''',
     # Allow terraform examples
-    '''examples/'''
+    '''examples/''',
+    # Allow detect-secrets baseline file (contains hashed secrets, not real ones)
+    '''\.secrets\.baseline$''',
+    # Allow test files with mock credentials
+    '''tests/test_provisioner.*\.py$'''
 ]
 
 regexes = [
@@ -58,7 +62,18 @@ regexes = [
     '''placeholder''',
     # Allow common non-secrets
     '''client_id.*example''',
-    '''secret.*REDACTED'''
+    '''secret.*REDACTED''',
+    # Allow hashed_secret in detect-secrets baseline files
+    '''"hashed_secret"\s*:\s*"[a-f0-9]+"'''
+]
+
+# Commits to ignore (false positives in git history)
+commits = [
+    # Historical test files with mock GCP credentials
+    "87e4ec657209fb097f69367b1eb9e0df30d58b7a",
+    "0dc52b8dbcc1d314eb33bbb87a54e162f74e3fb3",
+    # Historical .secrets.baseline file with hashed values
+    "1c5949a3eb0053028fae205683a3f543fbe6d152"
 ]
 
 # Stopwords - patterns to ignore
